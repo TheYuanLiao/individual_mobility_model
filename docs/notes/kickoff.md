@@ -15,3 +15,7 @@
 ### Meetings once a week?
 
 ### Continous feedback on report?
+
+## Planning report
+
+### Exploration vs Validation
