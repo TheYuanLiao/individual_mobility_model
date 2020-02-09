@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 )
@@ -49,6 +50,9 @@ func parseJSON(r io.Reader) (*User, error) {
 		t.CreatedAtTime = ts
 		tweets = append(tweets, &t)
 	}
+	if len(tweets) == 0 {
+		return nil, fmt.Errorf("no tweets found for user")
+	}
 	u, err := jsonAsUser(tweets)
 	if err != nil {
 		return nil, err
@@ -74,7 +78,20 @@ func jsonAsUser(tweets []*JSONTweet) (*User, error) {
 		return tweets[i].CreatedAtTime.Before(tweets[j].CreatedAtTime)
 	})
 	var u User
+	seenTweets := make(map[int]struct{})
+	duplicates := 0
+	uniques := 0
 	for _, tw := range tweets {
+		if u.ID != 0 && tw.User.ID != u.ID {
+			return nil, fmt.Errorf("found tweets with different user id: %d, %d", u.ID, tw.User.ID)
+		}
+		u.ID = tw.User.ID
+		if _, ok := seenTweets[tw.ID]; ok {
+			duplicates++
+			continue
+		}
+		uniques++
+		seenTweets[tw.ID] = struct{}{}
 		t := &Tweet{
 			ID:        tw.ID,
 			UserID:    tw.User.ID,
@@ -100,6 +117,7 @@ func jsonAsUser(tweets []*JSONTweet) (*User, error) {
 			u.Profiles = append(u.Profiles, p)
 		}
 	}
+	// fmt.Printf("parsed user %d\tu: %d\td: %d\n", u.ID, uniques, duplicates)
 	return &u, nil
 }
 
@@ -141,13 +159,15 @@ func (p *parser) jsonFile(path string) error {
 }
 
 func (p *parser) jsonDirectory(path string) error {
-	const maxFilesInMem = 200
+	const maxFilesInMem = 100
 	const insertBatchSize = 1000
 	fs, err := filepath.Glob(filepath.Join(path, "User*.json"))
 	if err != nil {
 		return err
 	}
 	fmt.Printf("Found %d files\n", len(fs))
+	fsGrouped := groupByUser(fs)
+	fmt.Printf("Found unique %d users\n", len(fsGrouped))
 	bytesChan := make(chan []byte, maxFilesInMem)
 	userChan := make(chan *User, insertBatchSize)
 	var parseGroup sync.WaitGroup
@@ -164,6 +184,7 @@ func (p *parser) jsonDirectory(path string) error {
 				u, err := parseJSON(bytes.NewBuffer(b))
 				if err != nil {
 					log.Println("parse file", err)
+					continue
 				}
 				// release file from memory
 				b = nil
@@ -198,12 +219,24 @@ func (p *parser) jsonDirectory(path string) error {
 		}
 	}()
 	// Start processing all files
-	for _, p := range fs {
-		b, err := ioutil.ReadFile(p)
-		if err != nil {
-			return err
+	for _, ps := range fsGrouped {
+		var bs []byte
+		for _, p := range ps {
+			b, err := ioutil.ReadFile(p)
+			if err != nil {
+				return err
+			}
+			bs = append(bs, b...)
 		}
-		bytesChan <- b
+		if len(bs) == 0 {
+			bases := make([]string, len(ps))
+			for i, p := range ps {
+				bases[i] = filepath.Base(p)
+			}
+			fmt.Println("empty files", bases)
+			continue
+		}
+		bytesChan <- bs
 	}
 	// let parsers finish
 	close(bytesChan)
@@ -213,4 +246,21 @@ func (p *parser) jsonDirectory(path string) error {
 	close(userChan)
 	storeGroup.Wait()
 	return nil
+}
+
+func groupByUser(filePaths []string) [][]string {
+	// from userId to filepaths for this user
+	groups := make(map[string][]string)
+	for _, f := range filePaths {
+		// Filenames are on the form "UserID_[user-id]_[time-period].json
+		// Ex: UserID_6913_20171122-233133.json
+		parts := strings.Split(filepath.Base(f), "_")
+		userID := parts[1]
+		groups[userID] = append(groups[userID], f)
+	}
+	var grouped [][]string
+	for _, files := range groups {
+		grouped = append(grouped, files)
+	}
+	return grouped
 }
