@@ -3,7 +3,7 @@ package ingest
 import "time"
 
 type User struct {
-	ID       string
+	ID       int
 	Profiles []*ProfileSnapshot
 	Timeline []*Tweet
 }
