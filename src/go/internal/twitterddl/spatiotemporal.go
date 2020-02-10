@@ -1,6 +1,9 @@
 package twitterddl
 
-import "time"
+import (
+	"database/sql"
+	"time"
+)
 
 type SpatioTemporal struct {
 	UserID  int
@@ -15,6 +18,10 @@ type SpatioTemporal struct {
 
 func (s *SpatioTemporal) InsertExec() []interface{} {
 	return []interface{}{s.TweetID, s.UserID, s.Geohash, s.Month, s.Weekday, s.HourOfDay}
+}
+
+func (s *SpatioTemporal) UnmarshalRow(row *sql.Rows) error {
+	return row.Scan(&s.TweetID, &s.UserID, &s.Geohash, &s.Month, &s.Weekday, &s.HourOfDay)
 }
 
 const SpatioTemporalDDL = `
