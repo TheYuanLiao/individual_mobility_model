@@ -1,2 +1,6 @@
+github.com/bradfitz/latlong v0.0.0-20170410180902-f3db6d0dff40 h1:wsnz4B2CSHJ09pwtMReU/GRqWDsI7XSasq7Nphem3Xk=
+github.com/bradfitz/latlong v0.0.0-20170410180902-f3db6d0dff40/go.mod h1:ZcXX9BndVQx6Q/JM6B8x7dLE9sl20S+TQsv4KO7tEQk=
 github.com/mattn/go-sqlite3 v2.0.3+incompatible h1:gXHsfypPkaMZrKbD5209QV9jbUTJKjyR5WD3HYQSd+U=
 github.com/mattn/go-sqlite3 v2.0.3+incompatible/go.mod h1:FPy6KqzDD04eiIsT53CuJW3U88zkxoIYsOqkbpncsNc=
+github.com/mmcloughlin/geohash v0.9.0 h1:FihR004p/aE1Sju6gcVq5OLDqGcMnpBY+8moBqIsVOs=
+github.com/mmcloughlin/geohash v0.9.0/go.mod h1:oNZxQo5yWJh0eMQEP/8hwQuVx9Z9tjwFUqcTB1SmG0c=
