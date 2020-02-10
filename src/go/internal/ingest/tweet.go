@@ -1,27 +1,11 @@
 package ingest
 
-import "time"
+import (
+	"github.com/ericwenn/mscthesis/src/go/internal/twitterddl"
+)
 
 type User struct {
 	ID       int
-	Profiles []*ProfileSnapshot
-	Timeline []*Tweet
-}
-
-type ProfileSnapshot struct {
-	ID        int
-	UserID    int
-	CreatedAt time.Time
-	Language  string
-	UTCOffset int
-	Timezone  string
-}
-
-type Tweet struct {
-	ID        int
-	UserID    int
-	CreatedAt time.Time
-	Language  string
-	Latitude  float64
-	Longitude float64
+	Profiles []*twitterddl.ProfileSnapshot
+	Timeline []*twitterddl.Tweet
 }
