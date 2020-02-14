@@ -9,5 +9,7 @@ require (
 	github.com/jonas-p/go-shp v0.1.1
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/mmcloughlin/geohash v0.9.0
+	github.com/smira/go-point-clustering v1.0.1
 	golang.org/x/image v0.0.0-20200119044424-58c23975cae1 // indirect
+	gopkg.in/ugjka/go-tz.v2 v2.0.8
 )

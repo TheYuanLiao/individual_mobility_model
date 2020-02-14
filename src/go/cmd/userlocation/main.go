@@ -8,10 +8,8 @@ import (
 	"sort"
 
 	"github.com/ericwenn/mscthesis/src/go/internal/twitterddl"
-
-	"github.com/mmcloughlin/geohash"
-
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/mmcloughlin/geohash"
 )
 
 type UserTopLocation struct {
@@ -36,13 +34,13 @@ func main() {
 	db, err := sql.Open("sqlite3", *sqlitePath)
 	defer db.Close()
 	check(err)
-	if _, err := db.Exec(twitterddl.HomeLocationDDL); err != nil {
+	if _, err := db.Exec(twitterddl.GeohashHomeLocationDDL); err != nil {
 		log.Fatal(err)
 	}
 	topGeohash, err := listUsersTopGeohash(db)
 	check(err)
 	usersGeohashes := groupByUser(topGeohash)
-	var hls []*twitterddl.HomeLocation
+	var hls []*twitterddl.GeohashHomeLocation
 	for _, tls := range usersGeohashes {
 		if len(tls) < 2 {
 			continue
@@ -53,12 +51,12 @@ func main() {
 	check(insertHomeLocations(db, hls))
 }
 
-func insertHomeLocations(db *sql.DB, hls []*twitterddl.HomeLocation) error {
+func insertHomeLocations(db *sql.DB, hls []*twitterddl.GeohashHomeLocation) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
-	stm, err := tx.Prepare(twitterddl.HomeLocationInsertStm)
+	stm, err := tx.Prepare(twitterddl.GeohashHomeLocationInsertStm)
 	if err != nil {
 		return err
 	}
@@ -97,7 +95,7 @@ GROUP BY geohash, user_id
 ORDER BY c desc
 `
 
-func homeLocation(tls []*UserTopLocation) *twitterddl.HomeLocation {
+func homeLocation(tls []*UserTopLocation) *twitterddl.GeohashHomeLocation {
 	totalTweets := 0
 	for _, bin := range tls {
 		totalTweets += bin.TweetsInGeo
@@ -109,7 +107,7 @@ func homeLocation(tls []*UserTopLocation) *twitterddl.HomeLocation {
 		tls = unsharpen(tls)
 	}
 	lat, lng := geohash.Decode(tls[0].Geohash)
-	return &twitterddl.HomeLocation{
+	return &twitterddl.GeohashHomeLocation{
 		UserID:      tls[0].UserID,
 		Latitude:    lat,
 		Longitude:   lng,
