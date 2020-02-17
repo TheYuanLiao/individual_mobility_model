@@ -1,8 +1,8 @@
-package twitterddl
+package repository
 
 import "time"
 
-type ProfileSnapshot struct {
+type Profile struct {
 	ID        int
 	UserID    int
 	CreatedAt time.Time

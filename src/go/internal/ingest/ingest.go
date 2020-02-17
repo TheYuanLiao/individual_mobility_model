@@ -3,18 +3,18 @@ package ingest
 import (
 	"bufio"
 	"bytes"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/ericwenn/mscthesis/src/go/internal/repository"
 )
 
 type JSONTweet struct {
@@ -33,6 +33,12 @@ type JSONTweet struct {
 		UTCOffset int    `json:"utc_offset"`
 		Timezone  string `json:"time_zone"`
 	} `json:"user"`
+}
+
+type User struct {
+	ID       int
+	Profiles []*repository.Profile
+	Timeline []*repository.Tweet
 }
 
 func parseJSON(r io.Reader) (*User, error) {
@@ -60,19 +66,6 @@ func parseJSON(r io.Reader) (*User, error) {
 	return u, nil
 }
 
-func parseJSONFile(path string) (*User, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	user, err := parseJSON(f)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
-}
-
 func jsonAsUser(tweets []*JSONTweet) (*User, error) {
 	sort.Slice(tweets, func(i, j int) bool {
 		return tweets[i].CreatedAtTime.Before(tweets[j].CreatedAtTime)
@@ -92,7 +85,7 @@ func jsonAsUser(tweets []*JSONTweet) (*User, error) {
 		}
 		uniques++
 		seenTweets[tw.ID] = struct{}{}
-		t := &Tweet{
+		t := &repository.Tweet{
 			ID:        tw.ID,
 			UserID:    tw.User.ID,
 			CreatedAt: tw.CreatedAtTime,
@@ -104,7 +97,7 @@ func jsonAsUser(tweets []*JSONTweet) (*User, error) {
 		}
 		u.Timeline = append(u.Timeline, t)
 
-		p := &ProfileSnapshot{
+		p := &repository.Profile{
 			ID:        tw.ID,
 			UserID:    tw.User.ID,
 			CreatedAt: tw.CreatedAtTime,
@@ -117,49 +110,20 @@ func jsonAsUser(tweets []*JSONTweet) (*User, error) {
 			u.Profiles = append(u.Profiles, p)
 		}
 	}
-	// fmt.Printf("parsed user %d\tu: %d\td: %d\n", u.ID, uniques, duplicates)
 	return &u, nil
 }
 
-func equalProfile(a, b *ProfileSnapshot) bool {
+func equalProfile(a, b *repository.Profile) bool {
 	return a.Timezone == b.Timezone && a.UTCOffset == b.UTCOffset && a.Language == b.Language
 }
 
-func JSONFile(db *sql.DB, path string) error {
-	p := parser{
-		s: storage{
-			db: db,
-		},
-	}
-	return p.jsonFile(path)
+type Ingester struct {
+	TweetRepo   *repository.TweetRepo
+	ProfileRepo *repository.ProfileRepo
 }
 
-func JSONDirectory(db *sql.DB, path string) error {
-	p := parser{
-		s: storage{
-			db: db,
-		},
-	}
-	return p.jsonDirectory(path)
-}
-
-type parser struct {
-	s storage
-}
-
-func (p *parser) jsonFile(path string) error {
-	user, err := parseJSONFile(path)
-	if err != nil {
-		return err
-	}
-	if err := p.s.insertAll([]*User{user}); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (p *parser) jsonDirectory(path string) error {
-	const maxFilesInMem = 100
+func (i *Ingester) Directory(path string) error {
+	const maxFilesInMem = 50
 	const insertBatchSize = 1000
 	fs, err := filepath.Glob(filepath.Join(path, "User*.json"))
 	if err != nil {
@@ -196,14 +160,20 @@ func (p *parser) jsonDirectory(path string) error {
 	var storeGroup sync.WaitGroup
 	storeGroup.Add(1)
 	go func() {
-		var users []*User
+		nUsers := 0
+		var tweets []*repository.Tweet
+		var profiles []*repository.Profile
 		flush := func() {
-			log.Printf("flushing %d users...", len(users))
-			if err := p.s.insertAll(users); err != nil {
+			log.Printf("flushing %d ...", nUsers)
+			if err := i.TweetRepo.InsertMany(tweets); err != nil {
 				fmt.Println(err)
 			}
-			log.Printf("flushed %d users", len(users))
-			users = nil
+			if err := i.ProfileRepo.InsertMany(profiles); err != nil {
+				fmt.Println(err)
+			}
+			tweets = nil
+			profiles = nil
+			nUsers = 0
 		}
 		for {
 			u, more := <-userChan
@@ -212,8 +182,10 @@ func (p *parser) jsonDirectory(path string) error {
 				storeGroup.Done()
 				return
 			}
-			users = append(users, u)
-			if len(users) >= insertBatchSize {
+			tweets = append(tweets, u.Timeline...)
+			profiles = append(profiles, u.Profiles...)
+			nUsers++
+			if nUsers >= insertBatchSize {
 				flush()
 			}
 		}
@@ -233,7 +205,6 @@ func (p *parser) jsonDirectory(path string) error {
 			for i, p := range ps {
 				bases[i] = filepath.Base(p)
 			}
-			fmt.Println("empty files", bases)
 			continue
 		}
 		bytesChan <- bs
@@ -242,7 +213,7 @@ func (p *parser) jsonDirectory(path string) error {
 	close(bytesChan)
 	log.Printf("waiting for parsers to finish")
 	parseGroup.Wait()
-	// let storaer finish
+	// let storer finish
 	close(userChan)
 	storeGroup.Wait()
 	return nil
