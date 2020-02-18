@@ -54,6 +54,7 @@ func (a *mobility) App() *cli.App {
 			a.ingest(),
 			a.geotag(),
 			a.homelocation(),
+			a.countrytweets(),
 		},
 	}
 }
