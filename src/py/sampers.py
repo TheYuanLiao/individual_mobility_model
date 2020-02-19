@@ -3,7 +3,7 @@ import pandas
 
 shps = {
     "national": "./../../dbs/sampers/national/region.shp",
-    "west": "./../../../dbs/sampers/west/region.shp",
+    "west": "./../../dbs/sampers/west/region.shp",
     "east": "./../../dbs/sampers/east/region.shp",
 }
 
@@ -15,7 +15,6 @@ odms = {
 
 
 def read_shp(path):
-    # TODO: ensure same column names for zones.
     return geopandas.read_file(path).rename(columns={'te_csv_Bor': 'zone', 'K_vast': 'zone', 'K_samm': 'zone'})
 
 
