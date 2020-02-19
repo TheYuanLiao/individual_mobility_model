@@ -1,1 +1,1 @@
-conda create --name mscthesis cartopy geopandas pandas numpy matplotlib jupyter
+conda create --name mscthesis cartopy geopandas pandas numpy matplotlib jupyter descartes
