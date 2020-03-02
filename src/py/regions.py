@@ -1,7 +1,11 @@
 import geopandas
 from shapely.geometry import Polygon
 
-countries = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres')).to_crs("EPSG:3035")
+# dont want to break others using countries and assuming epsg:3035
+countries_wgs = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+europe_wgs = countries_wgs[countries_wgs['continent'] == 'Europe'].dissolve(by='continent')
+
+countries = countries_wgs.to_crs("EPSG:3035")
 sweden = countries[countries['name'] == "Sweden"]
 
 counties = geopandas.read_file('../../../alla_lan/alla_lan.shp').to_crs("EPSG:3035")
