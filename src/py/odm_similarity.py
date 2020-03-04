@@ -189,16 +189,20 @@ def OD2simi(OD_baseline, OD, W, bins, hist, C1, C2):
 def similarity(df_gt, df_tw, shape, scale):
     beta = 0.03
     zone_distances, zone_to_index, W, df_OD = gravity_model(shape, df_tw, beta)
+    print('DONE: gravity model DF')
     OD_tw = od_df_to_od_matrix(df_OD, zone_to_index, "count")
+    print('DONE: gravity DF -> Matrix')
     df_gt["ozone"] = df_gt["ozone"].astype(int)
     df_gt["dzone"] = df_gt["dzone"].astype(int)
     OD_gt = od_df_to_od_matrix(df_gt, zone_to_index, "total")
-
+    print('DONE: GT DF -> Matrix')
     # Focus on the OD pairs that have distance longer than 100 km
     distance_filter = W < 100
     zone_distances = zone_distances.set_index(['ozone', 'dzone'])
     df_tw.apply(lambda row: zone_distances.loc[(row['ozone'], row['dzone']), 'd'], axis=1)
     df_tw['d'] = df_tw.apply(lambda row: zone_distances.loc[(row['ozone'], row['dzone']), 'd'], axis=1)
+    print(df_tw)
+    print('DONE: Add distances to gravity DF')
     # Create bins for similarity calculation
     if scale == "national":
         df_tw = df_tw[df_tw["d"] >= 100]
@@ -207,7 +211,7 @@ def similarity(df_gt, df_tw, shape, scale):
         bins_scale = [0] + [df_tw["d"].quantile(x / 100) for x in range(1, 101, 1)]
     hist, bin_edges = np.histogram(df_tw["d"], bins=bins_scale)  # "fd", bins_dict[scale]
     bins = [(x, y) for x, y in zip(bin_edges[:-1], bin_edges[1:])]
-
+    print('DONE: bins for SpSSIM created')
     # Implement the distance filter for national scale
     if scale == "national":
         OD_gt[distance_filter] = 0
@@ -215,13 +219,17 @@ def similarity(df_gt, df_tw, shape, scale):
 
     # Normalise OD to 0-1
     OD_gt = OD_gt / OD_gt.sum()
+    print('DONE: Normalize GT matrix')
     OD_tw = OD_tw / max(OD_tw.sum(), 1)
+    print('DONE: Normalize Gravity matrix')
 
     # Define the constants value for SpSSIM
     C1, C2 = 10 ** (-16), 10 ** (-10)
-    SpSSIM_mean, SpSSIM_share_mean, df_comp = OD2simi(OD_gt, OD_tw, W, bins, hist, C1, C2)
+    return OD_gt, OD_tw, W, bins, hist, C1, C2
+    #SpSSIM_mean, SpSSIM_share_mean, df_comp = OD2simi(OD_gt, OD_tw, W, bins, hist, C1, C2)
+    #print('DONE: Calculate SpSSIM')
 
     # Print out the results
-    print("Similarity:", SpSSIM_mean, "Similarity weighted by travel demand:", SpSSIM_share_mean)
-    print("Similarity by distance group:\n", df_comp)
-    return SpSSIM_mean, SpSSIM_share_mean, df_comp, OD_gt, OD_tw
+    #print("Similarity:", SpSSIM_mean, "Similarity weighted by travel demand:", SpSSIM_share_mean)
+    #print("Similarity by distance group:\n", df_comp)
+    #return SpSSIM_mean, SpSSIM_share_mean, df_comp, OD_gt, OD_tw
