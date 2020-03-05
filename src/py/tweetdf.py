@@ -12,6 +12,6 @@ def tweet_df():
 def from_csv(csvpath):
     df = pd.read_csv(csvpath)
     df["createdat"] = pd.to_datetime(df.createdat)
-    df.sort_values(by='createdat')
+    df = df.sort_values(by='createdat')
+    df = df.dropna()
     return df
-
