@@ -11,6 +11,7 @@ def read_csv(region="sweden"):
         print("unknown region")
         return
     acts = pd.read_csv(regions[region])
+    acts["createdat"] = pd.to_datetime(acts.createdat, format="%Y-%m-%d %H:%M:%S%z")
     return gpd.GeoDataFrame(
         acts,
         crs="EPSG:4326",
