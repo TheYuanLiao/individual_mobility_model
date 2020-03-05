@@ -176,7 +176,7 @@ def OD2simi(OD_baseline, OD, W, bins, hist, C1, C2):
             SpSSIM.append((d_bin[0], d_bin[1], freq, trip_weight, SpSSIM_ele))
             SpSSIM_mean += SpSSIM_ele
             SpSSIM_share_mean += SpSSIM_ele * trip_weight
-            bin_count += 1
+        bin_count += 1
     SpSSIM_mean = SpSSIM_mean / bin_count  # valid_count, bin_count
     df_comp = pd.DataFrame()
     df_comp["d_range"] = [(x[0], x[1]) for x in SpSSIM]
