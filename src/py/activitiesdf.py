@@ -11,7 +11,7 @@ def read_csv(region="sweden"):
         print("unknown region")
         return
     acts = pd.read_csv(regions[region])
-    acts["createdat"] = pd.to_datetime(acts.createdat, format="%Y-%m-%d %H:%M:%S%z")
+    acts["createdat"] = pd.to_datetime(acts.createdat, infer_datetime_format=True, utc=True)
     return gpd.GeoDataFrame(
         acts,
         crs="EPSG:4326",
@@ -83,9 +83,9 @@ def plot_label_hourofday(region_df):
 
 
 def gaps(df):
-    columns = ['createdat', 'region']
-    df_or = df.shift(1).dropna()[columns].reset_index()
-    df_ds = df.shift(-1).dropna()[columns].reset_index()
+    columns = ['createdat', 'region', 'label']
+    df_or = df.shift(1).dropna().reset_index(drop=True)
+    df_ds = df.shift(-1).dropna().reset_index(drop=True)
     df = df_or.join(df_ds, lsuffix="_origin", rsuffix="_destination")
     df = df.assign(duration=df['createdat_destination'] - df['createdat_origin'])
     return df
