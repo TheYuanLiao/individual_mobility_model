@@ -65,8 +65,10 @@ def label_multiple_homes(df):
     home_end = pd.Series(index=homeidx.index, dtype='datetime64[ns]')
     for (u, r), size in homeidx.iteritems():
         perc_10 = int(size / 10)
-        perc_10 = 1 if perc_10 < 1 else perc_10
-        hometweets = usr_3homeloc.loc[(u, r)].iloc[perc_10:-perc_10]
+        if size < 10:
+            hometweets = usr_3homeloc.loc[(u, r)]
+        else:
+            hometweets = usr_3homeloc.loc[(u, r)].iloc[perc_10:-perc_10]
         home_start.loc[(u, r)] = hometweets['createdat'].min()
         home_end.loc[(u, r)] = hometweets['createdat'].max()
     homes = pd.DataFrame({'size': homeidx, 'home_start': home_start, 'home_end': home_end})
@@ -87,6 +89,48 @@ def label_multiple_homes(df):
     for (userid, regionid) in homes_list:
         acts_2.loc[(userid, regionid), 'label'] = "home"
     return acts_2
+
+def latest_home(h1, h2):
+    return (h1 if h1['home_start'] > h2['home_start'] else h2)
+
+def label_current_home(df_input):
+    print("copying")
+    df = df_input.copy(deep=True).reset_index()
+    print("reindex")
+    df = df.set_index(['userid', 'region', 'tweetid']).sort_index()
+    print("largest cluster")
+    homeidx = during_home(df) \
+        .groupby(['userid', 'region']).size() \
+        .groupby('userid').nlargest(3)
+    homeidx.index = homeidx.index.droplevel()
+    usr_3homeloc = df.reset_index().set_index(['userid', 'region']).loc[homeidx.index.values]
+    usr_3homeloc = usr_3homeloc.reset_index().set_index(['userid', 'region']).sort_index()
+    home_start = pd.Series(index=homeidx.index, dtype='datetime64[ns]')
+    home_end = pd.Series(index=homeidx.index, dtype='datetime64[ns]')
+    for (u, r), size in homeidx.iteritems():
+        perc_10 = int(size / 10)
+        if size < 10:
+            hometweets = usr_3homeloc.loc[(u, r)]
+        else:
+            hometweets = usr_3homeloc.loc[(u, r)].iloc[perc_10:-perc_10]
+        home_start.loc[(u, r)] = hometweets['createdat'].min()
+        home_end.loc[(u, r)] = hometweets['createdat'].max()
+    homes = pd.DataFrame({'size': homeidx, 'home_start': home_start, 'home_end': home_end})
+    home_indexes = []
+    for u, rows in homes.groupby(level=0):
+        hs = rows.sort_values('size', ascending=False)
+        current_home = hs.iloc[0]
+        if len(hs) > 1:
+            if not (home_overlaps(hs.iloc[0], hs.iloc[1]) or less_than_30_days(hs.iloc[1])):
+                current_home = latest_home(current_home, hs.iloc[1])
+        if len(hs) > 2:
+            if not (home_overlaps(hs.iloc[0], hs.iloc[2]) or home_overlaps(hs.iloc[1], hs.iloc[2]) or less_than_30_days(hs.iloc[2])):
+                current_home = latest_home(current_home, hs.iloc[2])
+        home_indexes.append(current_home.name)
+    print("set values")
+    for (userid, regionid) in home_indexes:
+        df.loc[(userid, regionid), 'label'] = "home"
+    return df
 
 
 def during_work(df):
