@@ -21,14 +21,3 @@ def read_shp(path):
 def read_odm(path):
     return pandas.read_csv(path)
 
-
-def aggregate_odm(df):
-    origins = df.groupby('ozone', as_index=False).sum()[['ozone', 'total']].rename(
-        columns={'ozone': 'zone', 'total': 'origin'})
-    destinations = df.groupby('dzone', as_index=False).sum()[['dzone', 'total']].rename(
-        columns={'dzone': 'zone', 'total': 'destination'})
-    return origins.merge(destinations, on='zone')
-
-
-def merge_odm_shp(odmdf, shpdf):
-    return shpdf.merge(odmdf, on='zone')
