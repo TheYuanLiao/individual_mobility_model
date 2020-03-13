@@ -32,7 +32,7 @@ def cluster_spatial(tws, eps_km=0.1, min_samples=1):
 
 def cluster(tweets):
     regions = tweets.groupby('userid', as_index=False).apply(cluster_spatial)
-    return regions.droplevel(level=0)
+    return regions
 
 def get_home_locations(tweets):
     tweets['createdat'] = pd.to_datetime(tweets.createdat, utc=True)
