@@ -6,11 +6,38 @@ import sqlite3
 from sklearn.cluster import DBSCAN
 
 
-def during_home(df):
-    weekdays = (df['weekday'] < 6) & (0 < df['weekday'])
-    weekends = (df['weekday'] == 6) | (0 == df['weekday'])
-    morning_evening = (df['hourofday'] < 9) | (17 < df['hourofday'])
-    return df[((weekdays) & (morning_evening)) | (weekends)]
+def cluster(ts, eps_km=0.1, min_samples=1):
+    """
+    Clusters each users tweets with DBSCAN.
+    :param ts:
+    [userid*, latitude, longitude, ...rest]
+
+    :param eps_km:
+    eps parameter of DBSCAN expressed in kilometers.
+
+    :param min_samples:
+    min_samples parameter of DBSCAN.
+
+    :return:
+    [userid*, latitude, longitude, region, ...rest]
+    """
+    def f(_ts):
+        kms_per_radian = 6371.0088
+        coords_rad = np.radians(_ts[['latitude', 'longitude']].values)
+        cls = DBSCAN(eps=eps_km / kms_per_radian, min_samples=min_samples, metric='haversine').fit(coords_rad)
+        return _ts.assign(region=pd.Series(cls.labels_, index=_ts.index).values)
+    regions = ts.groupby('userid', as_index=False).apply(f)
+    return regions
+
+
+def during_home(ts):
+    """
+    Only returns tweets that are during "home-hours".
+    """
+    weekdays = (ts['weekday'] < 6) & (0 < ts['weekday'])
+    weekends = (ts['weekday'] == 6) | (0 == ts['weekday'])
+    morning_evening = (ts['hourofday'] < 9) | (17 < ts['hourofday'])
+    return ts[((weekdays) & (morning_evening)) | (weekends)]
 
 
 def label_home(ts):
@@ -39,15 +66,18 @@ def label_home(ts):
 def remove_tweets_outside_home_period(ts):
     """
     Remove tweets that are outside of detected home's time range.
-    """
+    input: (* = index)
+    [userid*, label, createdat, ...rest]
 
-    def filt(_ts):
+    output:
+    [userid*, label, createdat, ...rest]
+    """
+    def f(_ts):
         homes = _ts[_ts['label'] == 'home']
         start = homes['createdat'].min()
         end = homes['createdat'].max()
         return _ts[(start <= _ts['createdat']) & (_ts['createdat'] <= end)]
-
-    return ts.groupby('userid').apply(filt).droplevel(0)
+    return ts.groupby('userid').apply(f).droplevel(0)
 
 
 def gaps(df):
@@ -57,6 +87,22 @@ def gaps(df):
     df = df_or.join(df_ds, lsuffix="_origin", rsuffix="_destination")
     df = df.assign(duration=df['createdat_destination'] - df['createdat_origin'])
     return df
+
+
+def visit_gaps(visits):
+    """
+    :param visits:
+     DataFrame of visits indexed by "userid".
+     [userid*, ...rest]
+    :return:
+     DataFrame of gaps between visits for each user.
+     [userid*, ...rest_origin, ...rest_destination]
+    """
+    def f(user_visits):
+        origins = user_visits.shift(1).dropna().astype(visits.dtypes.to_dict()).reset_index(drop=True)
+        destinations = user_visits.shift(-1).dropna().astype(visits.dtypes.to_dict()).reset_index(drop=True)
+        return origins.join(destinations, lsuffix="_origin", rsuffix="_destination")
+    return visits.groupby('userid').apply(f).reset_index(level=1, drop=True)
 
 
 geotweet_paths = {
@@ -214,17 +260,4 @@ def tweets_from_sqlite(db):
     })
 
 
-def cluster_tweets(df, eps_km=0.1, min_samples=1):
-    kms_per_radian = 6371.0088
-    coords = df[['latitude', 'longitude']].values
-    return DBSCAN(eps=eps_km / kms_per_radian, min_samples=min_samples, metric='haversine').fit(np.radians(coords))
 
-
-def cluster_spatial(tws, eps_km=0.1, min_samples=1):
-    cls = cluster_tweets(tws, eps_km=eps_km, min_samples=min_samples)
-    return tws.assign(region=pd.Series(cls.labels_, index=tws.index).values)
-
-
-def cluster(tweets):
-    regions = tweets.groupby('userid', as_index=False).apply(cluster_spatial)
-    return regions

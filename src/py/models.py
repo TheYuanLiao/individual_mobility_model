@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics.pairwise import haversine_distances
 from math import pi, cos, sin
+import mscthesis
 
 
 class SongModel:
@@ -36,19 +37,19 @@ class SongModel:
     def _fit_location_prob(self):
         if self.location_probs is None:
             visits = self.tweets.groupby('region').size().sort_values(ascending=False)
-            probs = np.power(np.arange(1, visits.shape[0]+1), self.zipf)
+            probs = np.power(np.arange(1, visits.shape[0] + 1), self.zipf)
             probs = probs / np.sum(probs)
             self.location_probs = pd.Series(probs, index=visits.index)
         return self.location_probs
 
     def _fit_regions(self):
         if self.regions is None:
-            self.regions = self.tweets.groupby('region').head(1)
+            self.regions = self.tweets.groupby('region').head(1).set_index('region')
         return self.regions
 
     def _fit_jumps(self):
         if self.jump_sizes_km is None:
-            g = gaps(self.tweets)
+            g = mscthesis.gaps(self.tweets)
             lines = g[['latitude_origin', 'longitude_origin', 'latitude_destination', 'longitude_destination']].values
             self.jump_sizes_km = [6371.0088 * haversine_distances(
                 X=np.radians([_[:2]]),
@@ -77,14 +78,6 @@ class SongModel:
         region_idx = np.random.choice(self.location_probs.index, 1, p=self.location_probs.values)[0]
         region = self.regions.loc[region_idx]
         return "region", region_idx, region.latitude, region.longitude
-
-
-def gaps(df):
-    df_or = df.shift(1).dropna().reset_index(drop=True)
-    df_ds = df.shift(-1).dropna().reset_index(drop=True)
-    df = df_or.join(df_ds, lsuffix="_origin", rsuffix="_destination")
-    df = df.assign(duration=df['createdat_destination'] - df['createdat_origin'])
-    return df
 
 
 def latlngshift(lat, lng, delta_m, direction_rad):
