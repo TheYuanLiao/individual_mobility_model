@@ -82,8 +82,9 @@ def remove_tweets_outside_home_period(ts):
 
 def gaps(df):
     columns = ['createdat', 'region', 'label']
-    df_or = df.shift(1).dropna().reset_index(drop=True)
-    df_ds = df.shift(-1).dropna().reset_index(drop=True)
+    dtypes = df.dtypes.to_dict()
+    df_or = df.shift(1).dropna().astype(dtypes).reset_index(drop=True)
+    df_ds = df.shift(-1).dropna().astype(dtypes).reset_index(drop=True)
     df = df_or.join(df_ds, lsuffix="_origin", rsuffix="_destination")
     df = df.assign(duration=df['createdat_destination'] - df['createdat_origin'])
     return df
@@ -161,32 +162,42 @@ def rescale_population(populationdf):
     return populationdf
 
 
-def trips_from_geotweets(df):
+def trips_from_geotweets(df, threshold=None):
     """
     :type df: pandas.DataFrame
     """
+    df_copy = df.copy(deep=True).reset_index()
     trips = []
-    prev_loc = dict.fromkeys(df.userid)
+    delta_thres = None
+    if threshold is not None:
+        delta_thres = timedelta(hours=threshold)
+    prev_loc = dict.fromkeys(df_copy['userid'].unique())
     for _, row in df.iterrows():
-        prev_user_loc = prev_loc[row.userid]
+        prev_user_loc = prev_loc[row.name]
         if prev_user_loc is not None:
-            diff = row.createdat - prev_user_loc.createdat
-            if diff < timedelta(hours=12):
+            diff = row['createdat'] - prev_user_loc['createdat']
+            if delta_thres is None or diff < delta_thres:
                 trips.append([
-                    row.userid,
-                    prev_user_loc.tweetid, row.tweetid,
-                    prev_user_loc.createdat, row.createdat,
-                    prev_user_loc.latitude, prev_user_loc.longitude,
-                    row.latitude, row.longitude,
+                    row.name,
+                    prev_user_loc['tweetid'], row['tweetid'],
+                    prev_user_loc['createdat'], row['createdat'],
+                    prev_user_loc['timezone'], row['timezone'],
+                    prev_user_loc['latitude'], prev_user_loc['longitude'],
+                    row['latitude'], row['longitude'],
+                    prev_user_loc['region'], row['region'],
+                    prev_user_loc['label'], row['label'],
                     diff,
                 ])
-        prev_loc[row.userid] = row
+        prev_loc[row.name] = row
     return pd.DataFrame(data=trips, columns=[
         "userid",
         "tweetid_o", "tweetid_d",
         "createdat_o", "createdat_d",
+        "timezone_o", "timezone_d",
         "latitude_o", "longitude_o",
         "latitude_d", "longitude_d",
+        "region_o", "region_d",
+        "label_o", "label_d",
         "traveltime",
     ])
 
@@ -260,4 +271,30 @@ def tweets_from_sqlite(db):
     })
 
 
+def travel_survey_str_timestamp_to_datetime(time_column):
+    def fn(row):
+        d = pd.to_datetime(row['date'])
+        timestr = str(int(row[time_column]))
+        if len(timestr) > 2:
+            hour, minute = timestr[:-2], timestr[-2:]
+            d = d.replace(hour=int(hour), minute=int(minute))
+            return d
+        else:
+            d = d.replace(hour=0, minute=int(timestr))
+            return d
+        print(timestr)
+    return fn
 
+
+def travel_survey_trips_clean(df):
+    # purpose
+    df = df.dropna(subset=['purpose'])
+    df = df.assign(purpose=df['purpose'].astype(int))
+    pmap = pd.read_excel("./../../dbs/Swedish National Travel Survey (2011-2016)/variable_values.xlsx", sheet_name="purpose")
+    pmap = pmap.rename(columns={'value': 'purpose'})
+    df = df.merge(pmap, on='purpose').rename(columns={ 'meaning': 'purpose_meaning'})
+    # timestamps
+    df = df.dropna(subset=['desti_main_time', 'origin_main_time'])
+    df = df.assign(origin_time=df[['date', 'origin_main_time']].apply(travel_survey_str_timestamp_to_datetime('origin_main_time'), axis=1))
+    df = df.assign(destination_time=df[['date', 'desti_main_time']].apply(travel_survey_str_timestamp_to_datetime('desti_main_time'), axis=1))
+    return df
