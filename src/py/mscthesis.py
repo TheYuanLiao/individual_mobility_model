@@ -21,11 +21,13 @@ def cluster(ts, eps_km=0.1, min_samples=1):
     :return:
     [userid*, latitude, longitude, region, ...rest]
     """
+
     def f(_ts):
         kms_per_radian = 6371.0088
         coords_rad = np.radians(_ts[['latitude', 'longitude']].values)
         cls = DBSCAN(eps=eps_km / kms_per_radian, min_samples=min_samples, metric='haversine').fit(coords_rad)
         return _ts.assign(region=pd.Series(cls.labels_, index=_ts.index).values)
+
     regions = ts.groupby('userid', as_index=False).apply(f)
     return regions
 
@@ -72,11 +74,13 @@ def remove_tweets_outside_home_period(ts):
     output:
     [userid*, label, createdat, ...rest]
     """
+
     def f(_ts):
         homes = _ts[_ts['label'] == 'home']
         start = homes['createdat'].min()
         end = homes['createdat'].max()
         return _ts[(start <= _ts['createdat']) & (_ts['createdat'] <= end)]
+
     return ts.groupby('userid').apply(f).droplevel(0)
 
 
@@ -98,10 +102,12 @@ def visit_gaps(visits):
      DataFrame of gaps between visits for each user.
      [userid*, ...rest_origin, ...rest_destination]
     """
+
     def f(user_visits):
         origins = user_visits.shift(1).dropna().astype(visits.dtypes.to_dict()).reset_index(drop=True)
         destinations = user_visits.shift(-1).dropna().astype(visits.dtypes.to_dict()).reset_index(drop=True)
         return origins.join(destinations, lsuffix="_origin", rsuffix="_destination")
+
     return visits.groupby('userid').apply(f).reset_index(level=1, drop=True)
 
 
@@ -260,4 +266,37 @@ def tweets_from_sqlite(db):
     })
 
 
-
+def spssim(X=None, Y=None, D=None, C1=1e-16, C2=1e-10, nquantiles=20):
+    """
+    Calculate SpSSIM score between X and Y, using the distances from D.
+    X,Y,D must all be a pd.Series with the same MultiIndex (origin zone, destination zone).
+    X,Y must be normalized before calling this function.
+    """
+    if not Y.index.equals(X.index):
+        raise Exception('Y does not have same index as X')
+    if not D.index.equals(Y.index):
+        raise Exception('D does not have same index as Y')
+    if np.abs(np.sum(X) - 1) > 1e-5:
+        raise Exception('X is not normalized')
+    if np.abs(np.sum(Y) - 1) > 1e-5:
+        raise Exception('Y is not normalized')
+    Wx = X.unstack().values
+    Wy = Y.unstack().values
+    # Compute the quantiles.
+    quantiles = pd.qcut(D, q=nquantiles)
+    qgrps = quantiles.groupby(quantiles)
+    quantile_scores = []
+    # Create spatial weight matrix initialized to 0.
+    # This will be reused between quantiles because stacking/unstacking 9M cell matrix takes time (~3s)
+    spatial_weight = pd.Series(index=quantiles.index, dtype=int).unstack().values
+    for grpkey in qgrps.groups:
+        # Update spatial weight matrix such that each of the zones in this quantile == 1.
+        np.put(spatial_weight, qgrps.indices[grpkey], 1)
+        wx = (Wx * spatial_weight).flatten()
+        wy = (Wy * spatial_weight).flatten()
+        # Reset spatial weight matrix to previous value, in order to reuse.
+        np.put(spatial_weight, qgrps.indices[grpkey], 0)
+        score = (2 * wx.mean() * wy.mean() + C1) * (2 * np.cov(wx, wy)[0][1] + C2) / (
+                (wx.mean() ** 2 + wy.mean() ** 2 + C1) * (wx.var() + wy.var() + C2))
+        quantile_scores.append([grpkey, score])
+    return pd.DataFrame(quantile_scores, columns=['quantile', 'score']).set_index('quantile')
