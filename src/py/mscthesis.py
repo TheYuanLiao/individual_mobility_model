@@ -113,8 +113,19 @@ def visit_gaps(visits):
     return visits.groupby('userid').apply(f).reset_index(level=1, drop=True)
 
 
+def remove_consecutive_region_visits(visits):
+    def f(user_visits):
+        prev_region = user_visits.shift(1).reset_index()[['region']]
+        u_visits = user_visits.join(prev_region, rsuffix='_previous')
+        return u_visits[u_visits['region'] != u_visits['region_previous']].reset_index(drop=True)
+
+    visits_sorted = visits.reset_index().set_index(['userid', 'day', 'timeslot']).sort_index().reset_index()
+    return visits_sorted.groupby('userid').apply(f).reset_index(level=1, drop=True).drop(columns='region_previous').set_index('userid')
+
+
 geotweet_paths = {
     "sweden": "./../../dbs/sweden/geotweets.csv",
+    "sweden_infered": "./../../dbs/sweden/geotweets_infered.csv",
 }
 
 
