@@ -1,5 +1,6 @@
 import geopandas
 import pandas
+import regions
 
 shps = {
     "national": "./../../dbs/sampers/national/region.shp",
@@ -13,6 +14,10 @@ odms = {
     "east": "./../../dbs/sampers/east/trips.csv",
 }
 
+bbox = {
+    "east": regions.counties[regions.counties['ID'].isin(['01', '03', '04', '09', '18', '19'])].to_crs('EPSG:3006'),
+    "west": regions.counties[regions.counties['ID'].isin(['13', '14', '17'])].to_crs('EPSG:3006')
+}
 
 def read_shp(path):
     return geopandas.read_file(path).rename(columns={'te_csv_Bor': 'zone', 'K_vast': 'zone', 'K_samm': 'zone'})
