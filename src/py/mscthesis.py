@@ -4,6 +4,7 @@ import numpy as np
 from datetime import timedelta, timezone
 import sqlite3
 from sklearn.cluster import DBSCAN
+import math
 
 
 def cluster(ts, eps_km=0.1, min_samples=1):
@@ -340,3 +341,16 @@ def spssim(X=None, Y=None, D=None, C1=1e-16, C2=1e-10, nquantiles=20):
                 (wx.mean() ** 2 + wy.mean() ** 2 + C1) * (wx.var() + wy.var() + C2))
         quantile_scores.append([grpkey, score])
     return pd.DataFrame(quantile_scores, columns=['quantile', 'score']).set_index('quantile')
+
+
+def haversine_distance(lat1, lon1, lat2, lon2):
+    R = 6373.0
+    _lat1 = math.radians(lat1)
+    _lon1 = math.radians(lon1)
+    _lat2 = math.radians(lat2)
+    _lon2 = math.radians(lon2)
+    dlon = _lon2 - _lon1
+    dlat = _lat2 - _lat1
+    a = math.sin(dlat / 2) ** 2 + math.cos(_lat1) * math.cos(_lat2) * math.sin(dlon / 2) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return R * c
