@@ -318,7 +318,7 @@ def travel_survey_trips_clean(df):
     return df
 
 
-def spssim(X=None, Y=None, D=None, C1=1e-16, C2=1e-10, nquantiles=20):
+def spssim(X=None, Y=None, D=None, nquantiles=20):
     """
     Calculate SpSSIM score between X and Y, using the distances from D.
     X,Y,D must all be a pd.Series with the same MultiIndex (origin zone, destination zone).
@@ -332,6 +332,9 @@ def spssim(X=None, Y=None, D=None, C1=1e-16, C2=1e-10, nquantiles=20):
         raise Exception('X is not normalized')
     if np.abs(np.sum(Y) - 1) > 1e-5:
         raise Exception('Y is not normalized')
+	# Define C1 and C2 using Twitter OD as suggested by Pollard et al. (2013)
+	C1, C2 = Y.mean()**2*1e-4, Y.var()*1e-2
+	
     Wx = X.unstack().values
     Wy = Y.unstack().values
     # Compute the quantiles.
@@ -346,12 +349,14 @@ def spssim(X=None, Y=None, D=None, C1=1e-16, C2=1e-10, nquantiles=20):
         np.put(spatial_weight, qgrps.indices[grpkey], 1)
         wx = (Wx * spatial_weight).flatten()
         wy = (Wy * spatial_weight).flatten()
+		# Set trip weight
+		trip_weight = wx.sum()
         # Reset spatial weight matrix to previous value, in order to reuse.
         np.put(spatial_weight, qgrps.indices[grpkey], 0)
         score = (2 * wx.mean() * wy.mean() + C1) * (2 * np.cov(wx, wy)[0][1] + C2) / (
                 (wx.mean() ** 2 + wy.mean() ** 2 + C1) * (wx.var() + wy.var() + C2))
-        quantile_scores.append([grpkey, score])
-    return pd.DataFrame(quantile_scores, columns=['quantile', 'score']).set_index('quantile')
+        quantile_scores.append([grpkey, score, trip_weight])
+    return pd.DataFrame(quantile_scores, columns=['quantile', 'score', 'weight']).set_index('quantile')
 
 
 def haversine_distance(lat1, lon1, lat2, lon2):
