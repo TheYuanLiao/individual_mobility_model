@@ -120,7 +120,8 @@ def remove_consecutive_region_visits(visits):
         return u_visits[u_visits['region'] != u_visits['region_previous']].reset_index(drop=True)
 
     visits_sorted = visits.reset_index().set_index(['userid', 'day', 'timeslot']).sort_index().reset_index()
-    return visits_sorted.groupby('userid').apply(f).reset_index(level=1, drop=True).drop(columns='region_previous').set_index('userid')
+    return visits_sorted.groupby('userid').apply(f).reset_index(level=1, drop=True).drop(
+        columns='region_previous').set_index('userid')
 
 
 geotweet_paths = {
@@ -301,6 +302,7 @@ def travel_survey_str_timestamp_to_datetime(time_column):
             d = d.replace(hour=0, minute=int(timestr))
             return d
         print(timestr)
+
     return fn
 
 
@@ -308,13 +310,17 @@ def travel_survey_trips_clean(df):
     # purpose
     df = df.dropna(subset=['purpose'])
     df = df.assign(purpose=df['purpose'].astype(int))
-    pmap = pd.read_excel("./../../dbs/Swedish National Travel Survey (2011-2016)/variable_values.xlsx", sheet_name="purpose")
+    pmap = pd.read_excel("./../../dbs/Swedish National Travel Survey (2011-2016)/variable_values.xlsx",
+                         sheet_name="purpose")
     pmap = pmap.rename(columns={'value': 'purpose'})
-    df = df.merge(pmap, on='purpose').rename(columns={ 'meaning': 'purpose_meaning'})
+    df = df.merge(pmap, on='purpose').rename(columns={'meaning': 'purpose_meaning'})
     # timestamps
     df = df.dropna(subset=['desti_main_time', 'origin_main_time'])
-    df = df.assign(origin_time=df[['date', 'origin_main_time']].apply(travel_survey_str_timestamp_to_datetime('origin_main_time'), axis=1))
-    df = df.assign(destination_time=df[['date', 'desti_main_time']].apply(travel_survey_str_timestamp_to_datetime('desti_main_time'), axis=1))
+    df = df.assign(
+        origin_time=df[['date', 'origin_main_time']].apply(travel_survey_str_timestamp_to_datetime('origin_main_time'),
+                                                           axis=1))
+    df = df.assign(destination_time=df[['date', 'desti_main_time']].apply(
+        travel_survey_str_timestamp_to_datetime('desti_main_time'), axis=1))
     return df
 
 
@@ -332,9 +338,9 @@ def spssim(X=None, Y=None, D=None, nquantiles=20):
         raise Exception('X is not normalized')
     if np.abs(np.sum(Y) - 1) > 1e-5:
         raise Exception('Y is not normalized')
-	# Define C1 and C2 using Twitter OD as suggested by Pollard et al. (2013)
-	C1, C2 = Y.mean()**2*1e-4, Y.var()*1e-2
-	
+    # Define C1 and C2 using Twitter OD as suggested by Pollard et al. (2013)
+    C1, C2 = Y.mean() ** 2 * 1e-4, Y.var() * 1e-2
+
     Wx = X.unstack().values
     Wy = Y.unstack().values
     # Compute the quantiles.
@@ -349,8 +355,8 @@ def spssim(X=None, Y=None, D=None, nquantiles=20):
         np.put(spatial_weight, qgrps.indices[grpkey], 1)
         wx = (Wx * spatial_weight).flatten()
         wy = (Wy * spatial_weight).flatten()
-		# Set trip weight
-		trip_weight = wx.sum()
+        # Set trip weight
+        trip_weight = wx.sum()
         # Reset spatial weight matrix to previous value, in order to reuse.
         np.put(spatial_weight, qgrps.indices[grpkey], 0)
         score = (2 * wx.mean() * wy.mean() + C1) * (2 * np.cov(wx, wy)[0][1] + C2) / (
