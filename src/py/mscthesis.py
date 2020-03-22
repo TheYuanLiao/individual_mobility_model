@@ -115,6 +115,7 @@ def visit_gaps(visits):
 
 def remove_consecutive_region_visits(visits):
     def f(user_visits):
+        user_visits.reset_index()
         prev_region = user_visits.shift(1).reset_index()[['region']]
         u_visits = user_visits.join(prev_region, rsuffix='_previous')
         return u_visits[u_visits['region'] != u_visits['region_previous']].reset_index(drop=True)
