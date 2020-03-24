@@ -5,85 +5,238 @@ from math import pi, cos, sin
 import mscthesis
 
 
-class SongModel:
-    def __init__(self, p=None, gamma=None, zipf=None):
+class PreferentialReturn:
+    """
+    :param p:
+    Required.
+    Parameter p in pS^(-gamma)
+
+    :param gamma:
+    Required.
+    Parameter gamma in pS^(-gamma)
+
+    :param region_sampling:
+    How regions should be sampled when returning.
+    Defaults to the true probability of visiting a region.
+
+    :param jump_size_sampling:
+    How jump sizes should be sampled when exploring.
+    Defaults to the true distribution observed from tweets.
+    """
+
+    def __init__(self, p=None, gamma=None, region_sampling=None, jump_size_sampling=None):
         if p is None:
             raise Exception('p must be set')
+        self.p = p
+
         if gamma is None:
             raise Exception('gamma must be set')
-        if zipf is None:
-            raise Exception('zipf must be set')
-        self.p = p
         self.gamma = gamma
-        self.zipf = zipf
-        self.location_probs = None
-        self.exploration_prob = None
-        self.tweets = None
+
         self.regions = None
-        self.jump_sizes_km = None
+        self.exploration_prob = None
+
+        if region_sampling is None:
+            region_sampling = RegionTrueProb()
+        self.region_sampling = region_sampling
+
+        if jump_size_sampling is None:
+            jump_size_sampling = JumpSizeTrueProb()
+        self.jump_size_sampling = jump_size_sampling
 
     def fit(self, tweets):
-        self.tweets = tweets
-        self._fit_exploration_prob()
-        self._fit_regions()
-        self._fit_jumps()
+        self.region_sampling.fit(tweets)
+        self.jump_size_sampling.fit(tweets)
 
-    def _fit_exploration_prob(self):
-        if self.exploration_prob is None:
-            observed_locations = self._fit_location_prob()
-            self.exploration_prob = self.p * (observed_locations.shape[0] ** (-self.gamma))
-        return self.exploration_prob
+        self.regions = tweets.groupby('region').head(1).set_index('region')
 
-    def _fit_location_prob(self):
-        if self.location_probs is None:
-            visits = self.tweets.groupby('region').size().sort_values(ascending=False)
-            probs = np.power(np.arange(1, visits.shape[0] + 1), self.zipf)
-            probs = probs / np.sum(probs)
-            self.location_probs = pd.Series(probs, index=visits.index)
-        return self.location_probs
+        S = self.regions.shape[0]
+        self.exploration_prob = self.p * (S ** -self.gamma)
 
-    def _fit_regions(self):
-        if self.regions is None:
-            self.regions = self.tweets.groupby('region').head(1).set_index('region')
-        return self.regions
+    def next(self, prev):
+        """
+        Draws the next visit, either by exploration or return.
+        The model must be `fit` before this can be called.
 
-    def _fit_jumps(self):
-        if self.jump_sizes_km is None:
-            g = mscthesis.gaps(self.tweets)
-            lines = g[['latitude_origin', 'longitude_origin', 'latitude_destination', 'longitude_destination']].values
-            self.jump_sizes_km = [6371.0088 * haversine_distances(
-                X=np.radians([_[:2]]),
-                Y=np.radians([_[2:]]),
-            )[0, 0] for _ in lines]
+        :param prev:
+        Previous return from this function.
 
-    def sample(self, prev_sample):
+        :return:
+        For exploration a list ["point", latitude, longitude, -1]
+        For return a list ["region", latitude, longitude, region]
+        """
         r = np.random.uniform(0, 1)
-        prev_lat, prev_lng = None, None
-        if prev_sample[0] == 'region':
-            prev_lat, prev_lng = prev_sample[2], prev_sample[3]
-        else:
-            prev_lat, prev_lng = prev_sample[1], prev_sample[2]
         if r < self.exploration_prob:
-            return self._sample_exploration(prev_lat, prev_lng)
+            prev_lat, prev_lng = prev[1], prev[2]
+            jump_size_m = self.jump_size_sampling.sample()
+            direction_rad = np.random.uniform(0, pi)
+            lat, lng = latlngshift(prev_lat, prev_lng, jump_size_m, direction_rad)
+            return ["point", lat, lng, -1]
         else:
-            return self._sample_return()
-
-    def _sample_exploration(self, prev_lat, prev_lng):
-        jump_size_m = np.random.choice(self.jump_sizes_km) * 1000
-        direction_rad = np.random.uniform(0, pi)
-        lat, lng = latlngshift(prev_lat, prev_lng, jump_size_m, direction_rad)
-        return "point", lat, lng
-
-    def _sample_return(self):
-        region_idx = np.random.choice(self.location_probs.index, 1, p=self.location_probs.values)[0]
-        region = self.regions.loc[region_idx]
-        return "region", region_idx, region.latitude, region.longitude
+            region_idx = self.region_sampling.sample()
+            region = self.regions.loc[region_idx]
+            return ["region", region.latitude, region.longitude, region_idx]
 
 
 def latlngshift(lat, lng, delta_m, direction_rad):
+    """
+    Shifts the latitude and longitude by `delta_m` meters in `direction_rad`.
+    This is not 100% accurate, but close.
+    """
     dlat = sin(direction_rad) * delta_m
     dlng = cos(direction_rad) * delta_m
     r_earth_m = 6371000.0
     newlat = lat + (dlat / r_earth_m) * (180 / pi)
     newlng = lng + (dlng / r_earth_m) * (180 / pi) / cos(lat * pi / 180)
     return newlat, newlng
+
+
+class RegionTrueProb:
+    """
+    A region probability sampler that follows the true distribution of observed regions.
+    """
+    def __init__(self):
+        self.region_probs = None
+
+    def fit(self, tweets):
+        visits = tweets.groupby('region').size().sort_values(ascending=False)
+        self.region_probs = visits / visits.sum()
+
+    def sample(self):
+        return np.random.choice(
+            a=self.region_probs.index,
+            p=self.region_probs.values,
+            size=1,
+        )[0]
+
+
+class RegionZipfProb:
+    """
+    A region probability sampler that preserves the "rank" of observed regions, but
+    with probabilities sampled from a zipfian distribution.
+
+    :param s
+    Parameter S of the Zipf distribution
+    """
+    def __init__(self, s=1.2):
+        self.s = s
+        self.region_probs = None
+
+    def fit(self, tweets):
+        visits = tweets.groupby('region').size().sort_values(ascending=False)
+        probs = np.power(np.arange(1, visits.shape[0] + 1), -self.s)
+        self.region_probs = pd.Series(probs / np.sum(probs), index=visits.index)
+
+    def sample(self):
+        return np.random.choice(
+            a=self.region_probs.index,
+            p=self.region_probs.values,
+            size=1,
+        )[0]
+
+
+class JumpSizeTrueProb:
+    """
+    A jump size probability sampler that follows the true distribution of observed jump sizes.
+    """
+    def __init__(self):
+        self.jump_sizes_km = None
+
+    def fit(self, tweets):
+        gaps = mscthesis.gaps(tweets)
+        lines = gaps[[
+            'latitude_origin', 'longitude_origin',
+            'latitude_destination', 'longitude_destination',
+        ]].values
+        self.jump_sizes_km = [6371.0088 * haversine_distances(
+            X=np.radians([_[:2]]),
+            Y=np.radians([_[2:]]),
+        )[0, 0] for _ in lines]
+
+    def sample(self):
+        # should return in meters
+        return np.random.choice(self.jump_sizes_km) * 1000
+
+
+class Sampler:
+    """
+    Sampler is a convenience wrapper for sampling new trajectories for a group of users.
+
+    :param model:
+    The initialized preferential return model.
+
+    :param daily_trips_sampling:
+    How many trips should be sampled every day.
+    """
+    def __init__(self, model=None, daily_trips_sampling=None):
+        if model is None:
+            raise Exception("model must be set")
+        self.model = model
+
+        if daily_trips_sampling is None:
+            daily_trips_sampling = static_distribution(4)
+        self.daily_trips_sampling = daily_trips_sampling
+
+    def sample(self, tweets=None, n_days=1):
+        """
+        Samples new tweets for each user in `tweets` for `n_days`.
+
+        :param tweets:
+        pd.DataFrame (userid*, region, label, latitude, longitude, ...rest))
+
+        :param n_days:
+        How many days should be sampled.
+
+        :return:
+        The sampled tweets for each users
+        pd.DataFrame (*userid, day, timeslot, kind, latitude, longitude, region)
+        """
+        if tweets is None:
+            raise Exception("must set tweets when sampling")
+
+        samples = []
+        n_done = 0
+        for uid in tweets.index.unique():
+            utweets = tweets.loc[uid]
+
+            # Re-fit the model on this user
+            self.model.fit(utweets)
+
+            # Find home location
+            home = utweets[utweets['label'] == 'home']
+            # edge case: When there is only one visit to home location `home` is a single row already.
+            if home.shape[0] > 1:
+                home = home.iloc[0]
+
+            for day in range(n_days):
+                # Every days starts at home location
+                prev = ['region', home.latitude, home.longitude, home.region]
+                samples.append([uid, day, 0] + prev)
+
+                for timeslot in range(self.daily_trips_sampling()):
+                    current = self.model.next(prev)
+                    samples.append([uid, day, 0] + current)
+                    prev = current
+
+            n_done += 1
+            if n_done % 250 == 0:
+                print("done with", n_done)
+
+        return pd.DataFrame(
+            samples,
+            columns=['userid', 'day', 'timeslot', 'kind', 'latitude', 'longitude', 'region'],
+        ).set_index('userid')
+
+
+def static_distribution(n):
+    def f():
+        return n
+
+    return f
+
+
+def normal_distribution(mean, std):
+    def f():
+        return max(1, int(round(np.random.normal(mean, std))))
+
+    return f
