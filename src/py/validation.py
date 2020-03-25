@@ -153,6 +153,11 @@ class GravityModel:
         """
         self.beta = beta
 
+    def describe(self):
+        return {
+            "beta": self.beta,
+        }
+
     def gravitate(self, sparse_odm, distances):
         """
         :param distances

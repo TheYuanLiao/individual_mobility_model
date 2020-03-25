@@ -44,6 +44,14 @@ class PreferentialReturn:
             jump_size_sampling = JumpSizeTrueProb()
         self.jump_size_sampling = jump_size_sampling
 
+    def describe(self):
+        return {
+            "p": self.p,
+            "gamma": self.gamma,
+            "region_sampling": self.region_sampling.describe(),
+            "jump_size_sampling": self.jump_size_sampling.describe(),
+        }
+
     def fit(self, tweets):
         self.region_sampling.fit(tweets)
         self.jump_size_sampling.fit(tweets)
@@ -98,6 +106,11 @@ class RegionTrueProb:
     def __init__(self):
         self.region_probs = None
 
+    def describe(self):
+        return {
+            "name": "trueProb",
+        }
+
     def fit(self, tweets):
         visits = tweets.groupby('region').size().sort_values(ascending=False)
         self.region_probs = visits / visits.sum()
@@ -122,6 +135,12 @@ class RegionZipfProb:
         self.s = s
         self.region_probs = None
 
+    def describe(self):
+        return {
+            "name": "zipf",
+            "s": self.s
+        }
+
     def fit(self, tweets):
         visits = tweets.groupby('region').size().sort_values(ascending=False)
         probs = np.power(np.arange(1, visits.shape[0] + 1), -self.s)
@@ -141,6 +160,11 @@ class JumpSizeTrueProb:
     """
     def __init__(self):
         self.jump_sizes_km = None
+
+    def describe(self):
+        return {
+            "name": "trueProb",
+        }
 
     def fit(self, tweets):
         gaps = mscthesis.gaps(tweets)
@@ -168,16 +192,25 @@ class Sampler:
     :param daily_trips_sampling:
     How many trips should be sampled every day.
     """
-    def __init__(self, model=None, daily_trips_sampling=None):
+    def __init__(self, model=None, daily_trips_sampling=None, n_days=1):
         if model is None:
             raise Exception("model must be set")
         self.model = model
 
         if daily_trips_sampling is None:
-            daily_trips_sampling = static_distribution(4)
+            daily_trips_sampling = StaticDistribution(4)
         self.daily_trips_sampling = daily_trips_sampling
 
-    def sample(self, tweets=None, n_days=1):
+        self.n_days = n_days
+
+    def describe(self):
+        return {
+            "model": self.model.describe(),
+            "daily_trips_sampling": self.daily_trips_sampling.describe(),
+            "n_days": self.n_days,
+        }
+
+    def sample(self, tweets=None):
         """
         Samples new tweets for each user in `tweets` for `n_days`.
 
@@ -208,12 +241,12 @@ class Sampler:
             if home.shape[0] > 1:
                 home = home.iloc[0]
 
-            for day in range(n_days):
+            for day in range(self.n_days):
                 # Every days starts at home location
                 prev = ['region', home.latitude, home.longitude, home.region]
                 samples.append([uid, day, 0] + prev)
 
-                for timeslot in range(self.daily_trips_sampling()):
+                for timeslot in range(self.daily_trips_sampling.sample()):
                     current = self.model.next(prev)
                     samples.append([uid, day, 0] + current)
                     prev = current
@@ -228,15 +261,31 @@ class Sampler:
         ).set_index('userid')
 
 
-def static_distribution(n):
-    def f():
-        return n
+class StaticDistribution:
+    def __init__(self, n):
+        self.n = n
 
-    return f
+    def describe(self):
+        return {
+            "name": "static",
+            "n": self.n,
+        }
+
+    def sample(self):
+        return self.n
 
 
-def normal_distribution(mean, std):
-    def f():
-        return max(1, int(round(np.random.normal(mean, std))))
+class NormalDistribution:
+    def __init__(self, mean, std):
+        self.mean = mean
+        self.std = std
 
-    return f
+    def describe(self):
+        return {
+            "name": "normal",
+            "mean": self.mean,
+            "std": self.std,
+        }
+
+    def sample(self):
+        return max(1, int(round(np.random.normal(self.mean, self.std))))

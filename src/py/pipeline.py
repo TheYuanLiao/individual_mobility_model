@@ -83,7 +83,7 @@ if __name__ == "__main__":
 
     sampler_daily_trips_sampling = None
     if params['sampler']['daily_trips_sampling']['name'] == 'normal':
-        sampler_daily_trips_sampling = models.normal_distribution(
+        sampler_daily_trips_sampling = models.NormalDistribution(
             mean=params['sampler']['daily_trips_sampling']['mean'],
             std=params['sampler']['daily_trips_sampling']['std'],
         )
