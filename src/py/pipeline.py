@@ -34,7 +34,7 @@ params = {
             "mean": 3.143905,
             "std": 1.880373,
         },
-        "num_days": 1,  # 7*20,
+        "num_days": 7*20,
     },
     "validation": {
         "gravity": {
