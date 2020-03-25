@@ -8,15 +8,13 @@ import mscthesis
 scales = ['national', 'east', 'west']
 
 
-class Validator:
+class Sampers:
     def __init__(self):
-        self.sampers_zones = dict()
-        self.sampers_distances = dict()
-        self.sampers_odm = dict()
-        self.sampers_bbox = dict()
-        pass
+        self.zones = dict()
+        self.distances = dict()
+        self.odm = dict()
 
-    def prepare_sampers(self):
+    def prepare(self):
         for scale in scales:
             print("Preparing scale", scale)
             print("Reading original data...")
@@ -58,14 +56,12 @@ class Validator:
                 odm[distances < 100] = 0
                 odm = odm / odm.sum()
 
-            self.sampers_zones[scale] = zones
-            self.sampers_distances[scale] = distances
-            self.sampers_odm[scale] = odm
-            if scale in sampers.bbox:
-                self.sampers_bbox[scale] = sampers.bbox[scale]
+            self.zones[scale] = zones
+            self.distances[scale] = distances
+            self.odm[scale] = odm
             print()
 
-    def prepare_visits(self, visits):
+    def convert(self, visits):
         """
 
         :param visits:
@@ -81,26 +77,23 @@ class Validator:
         )
         print("Converting CRS...")
         # all zones share CRS so does not matter which is chosen
-        return visits.to_crs(self.sampers_zones["national"].crs)
+        return visits.to_crs(self.zones["national"].crs)
 
-    def validate(self, scale, visits, home_locations, gravity_beta=0.03):
+    def align(self, scale, visits, home_locations):
         """
-        Validates visits in regards to a specific Sampers zone.
+        Align visits in regards to a specific Sampers zone.
 
         :param scale:
         one of ['national', 'east', 'west']
 
         :param visits:
-        visits as returned from `prepare_visits`
+        visits as returned from `convert`
 
-        :paramhome_locations:
+        :param home_locations:
         gpd.GeoDataFrame(userid*, geometry) in CRS EPSG:3006
 
-        :param gravity_beta:
-        Parameter beta of gravity model
-
         :return:
-        ODM after gravity model, Sparse ODM before gravity model
+        Sparse ODM aligned to the Sampers zones on this scale
         """
         # Remove users not in sampling zone
         if scale not in sampers.bbox:
@@ -116,14 +109,14 @@ class Validator:
         regional_visits = visits[visits.kind == 'region']
         n_regional_visits_before = regional_visits.shape[0]
         user_regions = regional_visits.groupby(['userid', 'region']).head(1)
-        user_zones = gpd.sjoin(user_regions, self.sampers_zones[scale], op='intersects')[['region', 'zone']]
+        user_zones = gpd.sjoin(user_regions, self.zones[scale], op='intersects')[['region', 'zone']]
         regional_visits = user_zones.merge(regional_visits, on=['userid', 'region'])
         print("removed", n_regional_visits_before - regional_visits.shape[0], "region-visits due to missing zone geom")
 
         print("Aligning point-visits to Sampers zones...")
         point_visits = visits[visits.kind == 'point']
         n_point_visits_before = point_visits.shape[0]
-        point_visits = gpd.sjoin(point_visits, self.sampers_zones[scale], op='intersects')
+        point_visits = gpd.sjoin(point_visits, self.zones[scale], op='intersects')
         print("removed", n_point_visits_before - point_visits.shape[0], "point-visits due to missing zone geom")
 
         # Recombine
@@ -140,17 +133,51 @@ class Validator:
         print("Creating ODM...")
         sparse_odm = mscthesis.visit_gaps(visits[['zone']]) \
             .groupby(['zone_origin', 'zone_destination']).size() \
-            .reindex(self.sampers_odm[scale].index, fill_value=0.0)
+            .reindex(self.odm[scale].index, fill_value=0.0)
 
-        print("Gravity model...")
-        odm = gravitate(self.sampers_distances[scale], sparse_odm, beta=gravity_beta)
-
-        if scale == 'national':
-            sparse_odm[self.sampers_distances[scale] < 100] = 0
-            odm[self.sampers_distances[scale] < 100] = 0
         sparse_odm = sparse_odm / sparse_odm.sum()
-        odm = odm / odm.sum()
-        return odm, sparse_odm
+        return sparse_odm
+
+    def distance_cut(self, scale, odm):
+        if scale == 'national':
+            odm[self.distances[scale] < 100] = 0
+
+        return odm / odm.sum()
+
+
+class GravityModel:
+    def __init__(self, beta=0.03):
+        """
+        :param beta:
+        Beta parameter to gravity model. Should be positive.
+        """
+        self.beta = beta
+
+    def gravitate(self, sparse_odm, distances):
+        """
+        :param distances
+        Distances between zones in kilometres.
+        Must be a pd.Series with MultiIndex (origin zone, destination zone).
+
+        :param sparse_odm
+        Estimated travel demand between zones.
+        Must be a pd.Series with MultiIndex (origin zone, destination zone).
+        """
+        production = sparse_odm.groupby(level=0).sum().values
+        attraction = sparse_odm.groupby(level=1).sum().values
+        production += 0.0000001
+        attraction += 0.0000001
+        # ensure summation is the same between attraction and production
+        attraction = attraction * (np.sum(production) / np.sum(attraction))
+
+        seed = np.exp(-self.beta * distances).unstack()
+        values = ipf(seed.values, production, attraction)
+        odm = pd.DataFrame(
+            values,
+            index=seed.index,
+            columns=seed.columns
+        ).stack()
+        return odm
 
 
 def ipf(seed, column_margin, row_margin, max_iter=5000, tolerance=1e-5):
@@ -171,38 +198,3 @@ def ipf(seed, column_margin, row_margin, max_iter=5000, tolerance=1e-5):
     if not converged:
         print("IPF did not converge with tolerance", tolerance, "after", max_iter, "iterations")
     return curr_seed
-
-
-def gravitate(distances, sparse_odm, beta=0.03, return_seed=False):
-    """
-    :param beta:
-    Beta parameter to gravity model. Should be positive.
-
-    :param distances
-    Distances between zones in kilometres.
-    Must be a pd.Series with MultiIndex (origin zone, destination zone).
-
-    :param sparse_odm
-    Estimated travel demand between zones.
-    Must be a pd.Series with MultiIndex (origin zone, destination zone).
-
-    :param return_seed:
-    If the initial seed should be returned
-    """
-    production = sparse_odm.groupby(level=0).sum().values
-    attraction = sparse_odm.groupby(level=1).sum().values
-    production += 0.0000001
-    attraction += 0.0000001
-    # ensure summation is the same between attraction and production\n",
-    attraction = attraction * (np.sum(production) / np.sum(attraction))
-
-    seed = np.exp(-beta * distances).unstack()
-    values = ipf(seed.values, production, attraction)
-    odm = pd.DataFrame(
-        values,
-        index=seed.index,
-        columns=seed.columns
-    ).stack()
-    if return_seed:
-        return odm, seed
-    return odm

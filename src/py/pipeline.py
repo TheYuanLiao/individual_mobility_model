@@ -98,30 +98,40 @@ if __name__ == "__main__":
     )
     print()
 
-    validator = validation.Validator()
+    sampers = validation.Sampers()
     print("preparing sampers...")
-    validator.prepare_sampers()
+    sampers.prepare()
     print()
-    print("preparing visits...")
-    visits = validator.prepare_visits(visits)
+    print("converting visits...")
+    visits = sampers.convert(visits)
     print()
 
     results = []
     for scale in validation.scales:
         print("validating on scale", scale, "...")
-        odm, sparse_odm = validator.validate(
+        sparse_odm = sampers.align(
             scale,
             visits,
             home_locations,
-            gravity_beta=params['validation']['gravity']['beta'],
         )
-        odmfig = plots.plot_odms(sparse_odm, odm, validator.sampers_odm[scale])
-        odmfig.savefig("{}/odms-{}.png".format(run_directory, scale), bbox_inches='tight', dpi=140)
+        sparse_odm = sampers.distance_cut(scale, sparse_odm)
+        gm = validation.GravityModel(
+            beta=params['validation']['gravity']['beta'],
+        )
+        dense_odm = gm.gravitate(sparse_odm, sampers.distances[scale])
+        dense_odm = sampers.distance_cut(scale, dense_odm)
+
+        odmfig = plots.plot_odms(sparse_odm, dense_odm, sampers.odm[scale])
+        odmfig.savefig(
+            "{}/odms-{}.png".format(run_directory, scale),
+            bbox_inches='tight',
+            dpi=140,
+        )
         print("scoring on scale", scale, "...")
         score = mscthesis.spssim(
-            validator.sampers_odm[scale],
-            odm,
-            validator.sampers_distances[scale],
+            sampers.odm[scale],
+            dense_odm,
+            sampers.distances[scale],
             nquantiles=params['validation']['spssim']['quantiles'],
         )
         weighted_score = (score.score * score.weight).sum()
