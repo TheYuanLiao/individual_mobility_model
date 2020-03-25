@@ -134,8 +134,10 @@ if __name__ == "__main__":
             sampers.distances[scale],
             nquantiles=params['validation']['spssim']['quantiles'],
         )
-        weighted_score = (score.score * score.weight).sum()
-        print("weighted score =", weighted_score)
+        sampers_weighted_score = (score.score * score.sampers_weight).sum()
+        print("sampers weighted score =", sampers_weighted_score)
+        twitter_weighted_score = (score.score * score.twitter_weight).sum()
+        print("twitter weighted score =", twitter_weighted_score)
 
         score.to_csv("{}/score-{}.csv".format(run_directory, scale))
         scorefig = plots.plot_spssim_score(score)
@@ -143,7 +145,8 @@ if __name__ == "__main__":
 
         results.append({
             "scale": scale,
-            "weighted_score": weighted_score,
+            "sampers_weighted_score": sampers_weighted_score,
+            "twitter_weighted_score": twitter_weighted_score,
         })
         print()
 

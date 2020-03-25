@@ -366,8 +366,31 @@ def spssim(X=None, Y=None, D=None, nquantiles=20):
         np.put(spatial_weight, qgrps.indices[grpkey], 0)
         score = (2 * wx.mean() * wy.mean() + C1) * (2 * np.cov(wx, wy)[0][1] + C2) / (
                 (wx.mean() ** 2 + wy.mean() ** 2 + C1) * (wx.var() + wy.var() + C2))
-        quantile_scores.append([grpkey, score, trip_weight])
-    return pd.DataFrame(quantile_scores, columns=['quantile', 'score', 'weight']).set_index('quantile')
+        quantile_scores.append([
+            grpkey,                 # quantile
+            score,                  # score
+            wx.sum(),               # sampers_weight
+            wx.mean(),              # sampers_mean
+            wx.var(),               # sampers_var
+            wy.sum(),               # twitter_weight
+            wy.mean(),              # twitter_mean
+            wy.var(),               # twitter_var
+            np.cov(wx, wy)[0][1]    # covariance
+        ])
+    return pd.DataFrame(
+        quantile_scores,
+        columns=[
+            'quantile',
+            'score',
+            'sampers_weight',
+            'sampers_mean',
+            'sampers_var',
+            'twitter_weight',
+            'twitter_mean',
+            'twitter_var',
+            'covariance',
+        ],
+    ).set_index('quantile')
 
 
 def haversine_distance(lat1, lon1, lat2, lon2):
