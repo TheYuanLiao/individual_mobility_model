@@ -131,17 +131,21 @@ geotweet_paths = {
 }
 
 
-def read_geotweets(region="sweden"):
-    if region not in geotweet_paths:
-        print("unknown region")
-        return
-    ts = pd.read_csv(geotweet_paths[region])
+def read_geotweets_raw(path):
+    ts = pd.read_csv(path)
     ts["createdat"] = pd.to_datetime(ts.createdat, infer_datetime_format=True)
     return gpd.GeoDataFrame(
         ts,
         crs="EPSG:4326",
         geometry=gpd.points_from_xy(ts.longitude, ts.latitude),
     )
+
+
+def read_geotweets(region="sweden"):
+    if region not in geotweet_paths:
+        print("unknown region")
+        return
+    return read_geotweets_raw(geotweet_paths[region])
 
 
 def latlngodm_from_trips(trips):
