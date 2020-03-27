@@ -13,6 +13,7 @@ class Sampers:
         self.zones = dict()
         self.distances = dict()
         self.odm = dict()
+        self.quantile_groups = dict()
 
     def prepare(self):
         for scale in scales:
@@ -56,9 +57,14 @@ class Sampers:
                 odm[distances < 100] = 0
                 odm = odm / odm.sum()
 
+            print("Calculating quantiles...")
+            quantiles = pd.qcut(distances, q=100)
+            qgrps = quantiles.groupby(quantiles)
+
             self.zones[scale] = zones
             self.distances[scale] = distances
             self.odm[scale] = odm
+            self.quantile_groups[scale] = qgrps
             print()
 
     def convert(self, visits):
@@ -210,3 +216,77 @@ def ipf(seed, column_margin, row_margin, max_iter=5000, tolerance=1e-8):
     if not converged:
         print("IPF did not converge with tolerance", tolerance, "after", max_iter, "iterations")
     return curr_seed
+
+
+class SPSSIM:
+    def __init__(self):
+        pass
+
+    def score(self, X=None, Y=None, quantile_groups=None):
+        """
+        Calculate SpSSIM score between X and Y, using the quantile groups.
+
+        :param X:
+        pd.Series with MultiIndex (origin zone, destination zone).
+        Must be normalized.
+
+        :param Y:
+        pd.Series with MultiIndex (origin zone, destination zone).
+        Must be normalized.
+
+        :param quantile_groups:
+        pd.SeriesGroupby mapping distance groups to indexes.
+        Obtained by Sampers.prepare
+        """
+        if not Y.index.equals(X.index):
+            raise Exception('Y does not have same index as X')
+        if np.abs(np.sum(X) - 1) > 1e-5:
+            raise Exception('X is not normalized')
+        if np.abs(np.sum(Y) - 1) > 1e-5:
+            raise Exception('Y is not normalized')
+        # Define C1 and C2 using Twitter OD as suggested by Pollard et al. (2013)
+        C1, C2 = Y.mean() ** 2 * 1e-4, Y.var() * 1e-2
+
+        Wx = X.unstack().values
+        Wy = Y.unstack().values
+
+        quantile_scores = []
+        # Create spatial weight matrix initialized to 0.
+        # This will be reused between quantiles because stacking/unstacking 9M cell matrix takes time (~3s)
+        spatial_weight = pd.Series(index=X.index, dtype=int).unstack().values
+        for grpkey in quantile_groups.groups:
+            # Update spatial weight matrix such that each of the zones in this quantile == 1.
+            np.put(spatial_weight, quantile_groups.indices[grpkey], 1)
+            wx = (Wx * spatial_weight).flatten()
+            wy = (Wy * spatial_weight).flatten()
+            # Set trip weight
+            trip_weight = wx.sum()
+            # Reset spatial weight matrix to previous value, in order to reuse.
+            np.put(spatial_weight, quantile_groups.indices[grpkey], 0)
+            score = (2 * wx.mean() * wy.mean() + C1) * (2 * np.cov(wx, wy)[0][1] + C2) / (
+                    (wx.mean() ** 2 + wy.mean() ** 2 + C1) * (wx.var() + wy.var() + C2))
+            quantile_scores.append([
+                grpkey,  # quantile
+                score,  # score
+                wx.sum(),  # sampers_weight
+                wx.mean(),  # sampers_mean
+                wx.var(),  # sampers_var
+                wy.sum(),  # twitter_weight
+                wy.mean(),  # twitter_mean
+                wy.var(),  # twitter_var
+                np.cov(wx, wy)[0][1]  # covariance
+            ])
+        return pd.DataFrame(
+            quantile_scores,
+            columns=[
+                'quantile',
+                'score',
+                'sampers_weight',
+                'sampers_mean',
+                'sampers_var',
+                'twitter_weight',
+                'twitter_mean',
+                'twitter_var',
+                'covariance',
+            ],
+        ).set_index('quantile')

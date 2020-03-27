@@ -129,11 +129,11 @@ if __name__ == "__main__":
             dpi=140,
         )
         print("scoring on scale", scale, "...")
-        score = mscthesis.spssim(
+        spssim = validation.SPSSIM()
+        score = spssim.score(
             sampers.odm[scale],
             dense_odm,
-            sampers.distances[scale],
-            nquantiles=params['validation']['spssim']['quantiles'],
+            sampers.quantile_groups[scale],
         )
         sampers_weighted_score = (score.score * score.sampers_weight).sum()
         print("sampers weighted score =", sampers_weighted_score)
