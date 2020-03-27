@@ -169,7 +169,9 @@ class GravityModel:
         }
 
     def seed(self, distances):
-        return np.exp(-self.beta * distances)
+        seed = np.exp(-self.beta * distances)
+        seed = seed / seed.sum()
+        return seed
 
     def gravitate(self, sparse_odm, seed):
         """
@@ -290,3 +292,27 @@ class SPSSIM:
                 'covariance',
             ],
         ).set_index('quantile')
+
+
+class DistanceMetrics():
+    def __init__(self):
+        pass
+
+    def compute(self, quantile_groups=None, odms=None, titles=None):
+        """
+        :param quantile_groups:
+        pd.SeriesGroupby mapping distance groups to indexes.
+        Obtained by Sampers.prepare
+        """
+        if len(odms) != len(titles):
+            raise Exception("odms and titles must have same length")
+        metrics = []
+        for grpkey in quantile_groups.groups:
+            odm_grps = [o.iloc[quantile_groups.indices[grpkey]] for o in odms]
+            metrics.append(
+                [grpkey] + [g.mean() for g in odm_grps] + [g.var() for g in odm_grps]
+            )
+        return pd.DataFrame(
+            metrics,
+            columns=['distance'] + [t + '_mean' for t in titles] + [t + '_var' for t in titles]
+        ).set_index('distance')
