@@ -146,28 +146,36 @@ class Sampers:
 
 
 class GravityModel:
-    def __init__(self, beta=0.03):
+    def __init__(self, beta=0.03, max_iter=5000, tolerance=1e-8):
         """
         :param beta:
         Beta parameter to gravity model. Should be positive.
         """
         self.beta = beta
+        self.max_iter = max_iter
+        self.tolerance=tolerance
 
     def describe(self):
         return {
             "beta": self.beta,
+            "max_iter": self.max_iter,
+            "tolerance": self.tolerance,
         }
 
-    def gravitate(self, sparse_odm, distances):
-        """
-        :param distances
-        Distances between zones in kilometres.
-        Must be a pd.Series with MultiIndex (origin zone, destination zone).
+    def seed(self, distances):
+        return np.exp(-self.beta * distances)
 
+    def gravitate(self, sparse_odm, seed):
+        """
         :param sparse_odm
         Estimated travel demand between zones.
         Must be a pd.Series with MultiIndex (origin zone, destination zone).
+
+        :param seed
+        The seed to use for IPF.
+        Must be a pd.Series with MultiIndex (origin zone, destination zone).
         """
+        seed = seed.unstack()
         production = sparse_odm.groupby(level=0).sum().values
         attraction = sparse_odm.groupby(level=1).sum().values
         production += 0.0000001
@@ -175,8 +183,7 @@ class GravityModel:
         # ensure summation is the same between attraction and production
         attraction = attraction * (np.sum(production) / np.sum(attraction))
 
-        seed = np.exp(-self.beta * distances).unstack()
-        values = ipf(seed.values, production, attraction)
+        values = ipf(seed.values, production, attraction, self.max_iter, self.tolerance)
         odm = pd.DataFrame(
             values,
             index=seed.index,
@@ -185,7 +192,7 @@ class GravityModel:
         return odm
 
 
-def ipf(seed, column_margin, row_margin, max_iter=5000, tolerance=1e-5):
+def ipf(seed, column_margin, row_margin, max_iter=5000, tolerance=1e-8):
     curr_seed = seed
     converged = False
     for i in range(max_iter):

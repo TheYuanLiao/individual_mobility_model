@@ -118,7 +118,8 @@ if __name__ == "__main__":
         gm = validation.GravityModel(
             beta=params['validation']['gravity']['beta'],
         )
-        dense_odm = gm.gravitate(sparse_odm, sampers.distances[scale])
+        seed_odm = gm.seed(sampers.distances[scale])
+        dense_odm = gm.gravitate(sparse_odm, seed_odm)
         dense_odm = sampers.distance_cut(scale, dense_odm)
 
         odmfig = plots.plot_odms(sparse_odm, dense_odm, sampers.odm[scale])

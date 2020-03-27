@@ -73,7 +73,8 @@ if __name__ == "__main__":
             for scale in validation.scales:
                 sparse_odm = sampers.align(scale=scale, home_locations=home_locations, visits=visits)
                 sparse_odm = sampers.distance_cut(scale=scale, odm=sparse_odm)
-                dense_odm = gm.gravitate(sparse_odm=sparse_odm, distances=sampers.distances[scale])
+                seed_odm = gm.seed(sampers.distances[scale])
+                dense_odm = gm.gravitate(sparse_odm=sparse_odm, seed=seed_odm)
                 dense_odm = sampers.distance_cut(scale=scale, odm=dense_odm)
 
                 odmfig = plots.plot_odms(sparse_odm, dense_odm, sampers.odm[scale])
