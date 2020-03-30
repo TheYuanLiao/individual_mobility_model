@@ -121,9 +121,12 @@ class Sampers:
 
         print("Aligning point-visits to Sampers zones...")
         point_visits = visits[visits.kind == 'point']
-        n_point_visits_before = point_visits.shape[0]
-        point_visits = gpd.sjoin(point_visits, self.zones[scale], op='intersects')
-        print("removed", n_point_visits_before - point_visits.shape[0], "point-visits due to missing zone geom")
+        if point_visits.shape[0] > 0:
+            n_point_visits_before = point_visits.shape[0]
+            point_visits = gpd.sjoin(point_visits, self.zones[scale], op='intersects')
+            print("removed", n_point_visits_before - point_visits.shape[0], "point-visits due to missing zone geom")
+        else:
+            point_visits = point_visits.assign(zone='0')
 
         # Recombine
         visits = pd.concat([

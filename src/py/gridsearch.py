@@ -14,17 +14,18 @@ results_dir = "./../../results"
 if __name__ == "__main__":
     cfgs = pipeline.config_product(
         visit_factories=[
-            models.VisitsFromFile("./../../dbs/sweden/visits-zipf1.0.csv"),
-            models.VisitsFromFile("./../../dbs/sweden/visits-zipf1.2.csv"),
-            models.VisitsFromFile("./../../dbs/sweden/visits-zipf1.5.csv"),
+            models.VisitsFromGeotweetsFile("./../../dbs/sweden/geotweets.csv"),
+            #models.VisitsFromFile("./../../dbs/sweden/visits-zipf1.0.csv"),
+            #models.VisitsFromFile("./../../dbs/sweden/visits-zipf1.2.csv"),
+            #models.VisitsFromFile("./../../dbs/sweden/visits-zipf1.5.csv"),
         ],
         home_locations_paths=[
             "./../../dbs/sweden/homelocations.csv",
         ],
         gravity_models=[
-            validation.GravityModel(beta=0.025),
             validation.GravityModel(beta=0.03),
-            validation.GravityModel(beta=0.035),
+            #validation.GravityModel(beta=0.025),
+            #validation.GravityModel(beta=0.035),
         ]
     )
     pipe = pipeline.Pipeline()

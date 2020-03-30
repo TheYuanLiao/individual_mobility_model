@@ -1,5 +1,4 @@
 import pandas as pd
-import geopandas as gpd
 import numpy as np
 from sklearn.metrics.pairwise import haversine_distances
 from math import pi, cos, sin
@@ -330,5 +329,41 @@ class VisitsFromFile:
             "type": "from_file",
             "path": self.file_path,
         }
+
     def visits(self):
         return pd.read_csv(self.file_path).set_index('userid')
+
+
+class VisitsFromGeotweetsFile:
+    def __init__(self, file_path=None):
+        if file_path is None:
+            raise Exception("file_path must be set")
+        self.file_path = file_path
+
+        # cache variable
+        self._visits = None
+
+    def describe(self):
+        return {
+            "type": "from_geotweets_file",
+            "path": self.file_path,
+        }
+
+    def visits(self):
+        if self._visits is None:
+            v = mscthesis.read_geotweets_raw(self.file_path).set_index('userid')
+            v = v.assign(
+                kind='region',
+                day=v.createdat.dt.strftime('%Y-%m'),
+            ).rename(columns={
+                "hourofday": "timeslot"
+            })[[
+                'region',
+                'latitude',
+                'longitude',
+                'day',
+                'timeslot',
+                'kind',
+            ]]
+            self._visits = v
+        return self._visits
