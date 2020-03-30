@@ -260,7 +260,7 @@ class Sampler:
 
                 for timeslot in range(self.daily_trips_sampling.sample()):
                     current = self.model.next(prev)
-                    samples.append([uid, day, timeslot] + current)
+                    samples.append([uid, day, timeslot+1] + current)
                     prev = current
 
             n_done += 1
