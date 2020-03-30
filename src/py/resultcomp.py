@@ -19,13 +19,14 @@ def string_range(strings, start=None, end=None):
     return keep
 
 
-def read_results(start=None, end=None):
-    result_directories = sorted(os.listdir(results_dir))
-    directories = string_range(result_directories, start, end)
+def read_results(start=None, end=None, directories=None):
+    if directories is None:
+        result_directories = sorted(os.listdir(results_dir))
+        directories = string_range(result_directories, start, end)
+
     scores_national = get_scale_results(directories, "national")
     scores_east = get_scale_results(directories, "east")
     scores_west = get_scale_results(directories, "west")
-
     return scores_national, scores_east, scores_west
 
 
@@ -52,18 +53,84 @@ def plot_scores(snational, seast, swest):
             ax=axes[i, 0],
             rot=90,
             title="Score [{}]".format(title),
-            legend=False,
+            #legend=False,
             xticks=[],
         )
         (data.sampers_weight - data.twitter_weight).unstack().plot(
             ax=axes[i, 1],
             rot=90,
             title="Delta Weight [{}]".format(title),
-            legend=False,
+            #legend=False,
             xticks=[],
         )
     return fig
 
+
+def plot_score_summary(national, east, west):
+    def summary(df):
+        return pd.DataFrame(
+            [[
+                (df.score * df.twitter_weight).sum(),
+                (df.score * df.sampers_weight).sum(),
+            ]],
+            columns=['twitter_weighted', 'sampers_weighted']
+        )
+
+    fig, axes = plt.subplots(3, 1, figsize=(20, 10))
+    for (title, data, ax) in zip(
+            ['National', 'East', 'West'],
+            [national, east, west],
+            axes
+    ):
+        data.groupby('run_id').apply(summary).reset_index(level=1, drop=True).plot(kind='bar', ax=ax).legend(
+            bbox_to_anchor=(1, 1))
+
+    return fig
+
+
+
+def read_distance_metrics(start=None, end=None, directories=None):
+    if directories is None:
+        result_directories = sorted(os.listdir(results_dir))
+        directories = string_range(result_directories, start, end)
+
+    return pd.concat([
+        read_scale_distance_metrics(directories, "national"),
+        read_scale_distance_metrics(directories, "east"),
+        read_scale_distance_metrics(directories, "west"),
+    ])
+
+
+def read_scale_distance_metrics(directories, scale):
+    metrics = None
+    for d in directories:
+        p = "{}/{}/distance-metrics-{}.csv".format(results_dir, d, scale)
+        if not os.path.exists(p):
+            continue
+        s = pd.read_csv(p)
+        s = s.assign(run_id=d, scale=scale).set_index(['scale', 'run_id', 'distance'])
+        if metrics is None:
+            metrics = s
+        else:
+            metrics = pd.concat([metrics, s])
+    return metrics
+
+
+def plot_distance_metrics(dms):
+    fig, all_axes = plt.subplots(3, 3, figsize=(20,15), sharey=True)
+    for (scale, axes) in zip(
+        dms.index.get_level_values(level=0).unique(),
+        all_axes
+    ):
+        for (col, ax) in zip(['model_mean', 'gravity_mean', 'sampers_mean'], axes):
+            ax.set_title("{} - {}".format(scale, col))
+            dms.loc[scale][col].unstack(level=0).plot(
+                ax=ax,
+                rot=90,
+                logy=True,
+                xticks=[],
+            ).legend(bbox_to_anchor=(1, 1))
+    return fig
 
 if __name__ == "__main__":
     print(len(sys.argv))
