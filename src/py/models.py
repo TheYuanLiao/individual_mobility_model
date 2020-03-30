@@ -171,6 +171,8 @@ class JumpSizeTrueProb:
 
     def fit(self, tweets):
         gaps = mscthesis.gaps(tweets)
+        # Don't use tweets in same region for jump size distribution as they will all be 0.
+        gaps = gaps[gaps['region_origin'] != gaps['region_destination']]
         lines = gaps[[
             'latitude_origin', 'longitude_origin',
             'latitude_destination', 'longitude_destination',
@@ -181,8 +183,9 @@ class JumpSizeTrueProb:
         )[0, 0] for _ in lines]
 
     def sample(self):
+        km = np.random.choice(self.jump_sizes_km)
         # should return in meters
-        return np.random.choice(self.jump_sizes_km) * 1000
+        return km * 1000
 
 
 class Sampler:
@@ -276,10 +279,14 @@ class Sampler:
         if self._visits is None:
             geotweets = mscthesis.read_geotweets_raw(self.geotweets_path).set_index('userid')
 
-            # remove users with less than 5 tweets
             # this code should be somewhere else...
             tweetcount = geotweets.groupby('userid').size()
-            geotweets = geotweets.drop(labels=tweetcount[tweetcount < 5].index)
+            geotweets = geotweets.drop(labels=tweetcount[tweetcount < 20].index)
+            regioncount = geotweets.groupby(['userid', 'region']).size().groupby('userid').size()
+            geotweets = geotweets.drop(labels=regioncount[regioncount < 2].index)
+
+            # Ensure the tweets are sorted chronologically
+            geotweets = geotweets.sort_values(by=['userid', 'createdat'])
 
             self._visits = self.sample(
                 geotweets,
