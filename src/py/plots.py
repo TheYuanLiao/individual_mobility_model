@@ -2,62 +2,71 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 
-def plot_odms(sparse_odm, dense_odm, sampers_odm):
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharex=True, sharey=True)
-    fig.set_size_inches(18.5, 10.5)
-    ax1.set_title('Sparse ODM')
-    ax1.imshow(sparse_odm.unstack().values, norm=mpl.colors.LogNorm())
-    ax2.set_title('ODM')
-    ax2.imshow(dense_odm.unstack().values, norm=mpl.colors.LogNorm())
-    ax3.set_title('Sampers')
-    ax3.imshow(sampers_odm.unstack().values, norm=mpl.colors.LogNorm())
+def plot_odms(odms=None, titles=None):
+    if len(odms) != len(titles):
+        raise Exception("Odms and titles must have same length")
+
+    fig, axes = plt.subplots(
+        nrows=1,
+        ncols=len(odms),
+        figsize=(20, 10),
+        sharex=True,
+        sharey=True,
+    )
+    if len(odms) == 1:
+        axes = [axes]
+
+    for (odm, title, ax) in zip(odms, titles, axes):
+        ax.set_title(title)
+        ax.imshow(
+            odm.unstack().values,
+            norm=mpl.colors.LogNorm(),
+        )
 
     return fig
 
 
 def plot_spssim_score(score):
-    subplot_line_config = {
-        # Hide xticks for subplots
-        'xticks': [],
-    }
-    fig = plt.figure(figsize=(20, 12), constrained_layout=True)
-    gs = fig.add_gridspec(2, 3)
-    plots = [
-        (
-            "Score",
-            fig.add_subplot(gs[0, :]),
-            score[['score']],
-        ),
-        (
-            "Weight",
-            fig.add_subplot(gs[1, 0]),
-            score[['sampers_weight', 'twitter_weight']],
-            subplot_line_config,
-        ),
-        (
-            "Variance",
-            fig.add_subplot(gs[1, 1]),
-            score[['sampers_var', 'twitter_var']],
-            subplot_line_config,
-        ),
-        (
-            "Covariance",
-            fig.add_subplot(gs[1, 2]),
-            score[['covariance']],
-            subplot_line_config,
-        ),
-    ]
-    for p in plots:
-        title = p[0]
-        ax = p[1]
-        data = p[2]
-        line_overrides = p[3] if len(p) == 4 else {}
-        ax.set_title(title, fontsize=20, fontweight='bold')
-        data.plot(
+    fig, [ax1, ax2] = plt.subplots(1, 2, figsize=(20, 5), constrained_layout=True)
+    ax1.set_title("Score")
+    score[['score']].plot(
+        ax=ax1,
+        kind='line',
+        rot=90,
+    )
+    score[['sampers_weight', 'twitter_weight']].plot(
+        ax=ax2,
+        style='--',
+        rot=90,
+    )
+    return fig
+
+
+def plot_distance_metrics(distance_metrics, prefixes=None):
+    if prefixes is None:
+        raise Exception("prefixes must be set")
+    views = ['mean', 'variance']
+    fig, axes = plt.subplots(len(views), 1, figsize=(15, 4*len(views)))
+    for (view, ax) in zip(views, axes):
+        ax.set_title(view.capitalize())
+        columns = [p + '_' + view for p in prefixes]
+        distance_metrics[columns].plot(
             ax=ax,
-            kind='line',
-            rot=90,
-            fontsize=18,
-            **line_overrides,
+        ).legend(
+            labels=prefixes,
+            # put legend outside of plot for visibility
+            loc='upper left',
+            bbox_to_anchor=(1.05, 1)
+        )
+        logax = ax.twinx()
+        distance_metrics[columns].plot(
+            ax=logax,
+            logy=True,
+            style='--',
+        ).legend(
+            labels=[p + ' (log10)' for p in prefixes],
+            # put legend outside of plot for visibility
+            loc='upper left',
+            bbox_to_anchor=(1.05, 0.65)
         )
     return fig

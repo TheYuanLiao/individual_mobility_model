@@ -1,0 +1,14 @@
+{
+  "national": {
+    "sampers_weighted_score": 0.6021430572659296,
+    "twitter_weighted_score": 0.5305910248980972
+  },
+  "east": {
+    "sampers_weighted_score": 0.18240672635981323,
+    "twitter_weighted_score": 0.4774731612097388
+  },
+  "west": {
+    "sampers_weighted_score": 0.3476943824475418,
+    "twitter_weighted_score": 0.6304297019520336
+  }
+}

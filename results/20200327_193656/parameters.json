@@ -1,0 +1,12 @@
+{
+  "visits": {
+    "type": "from_file",
+    "path": "./../../dbs/sweden/visits-zipf1.5.csv"
+  },
+  "home_locations": "./../../dbs/sweden/homelocations.csv",
+  "gravity_model": {
+    "beta": 0.025,
+    "max_iter": 5000,
+    "tolerance": 1e-08
+  }
+}

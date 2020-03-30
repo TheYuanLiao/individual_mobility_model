@@ -1,4 +1,5 @@
 import pandas as pd
+import geopandas as gpd
 import numpy as np
 from sklearn.metrics.pairwise import haversine_distances
 from math import pi, cos, sin
@@ -103,6 +104,7 @@ class RegionTrueProb:
     """
     A region probability sampler that follows the true distribution of observed regions.
     """
+
     def __init__(self):
         self.region_probs = None
 
@@ -131,6 +133,7 @@ class RegionZipfProb:
     :param s
     Parameter S of the Zipf distribution
     """
+
     def __init__(self, s=1.2):
         self.s = s
         self.region_probs = None
@@ -158,6 +161,7 @@ class JumpSizeTrueProb:
     """
     A jump size probability sampler that follows the true distribution of observed jump sizes.
     """
+
     def __init__(self):
         self.jump_sizes_km = None
 
@@ -192,7 +196,8 @@ class Sampler:
     :param daily_trips_sampling:
     How many trips should be sampled every day.
     """
-    def __init__(self, model=None, daily_trips_sampling=None, n_days=1):
+
+    def __init__(self, model=None, daily_trips_sampling=None, n_days=1, geotweets_path=None):
         if model is None:
             raise Exception("model must be set")
         self.model = model
@@ -201,13 +206,21 @@ class Sampler:
             daily_trips_sampling = StaticDistribution(4)
         self.daily_trips_sampling = daily_trips_sampling
 
+        if geotweets_path is None:
+            raise Exception("geotweets_path must be set")
+        self.geotweets_path = geotweets_path
+
         self.n_days = n_days
+
+        # variable for caching the output
+        self._visits = None
 
     def describe(self):
         return {
             "model": self.model.describe(),
             "daily_trips_sampling": self.daily_trips_sampling.describe(),
             "n_days": self.n_days,
+            "geotweets_path": self.geotweets_path
         }
 
     def sample(self, tweets=None):
@@ -260,6 +273,21 @@ class Sampler:
             columns=['userid', 'day', 'timeslot', 'kind', 'latitude', 'longitude', 'region'],
         ).set_index('userid')
 
+    def visits(self):
+        if self._visits is None:
+            geotweets = mscthesis.read_geotweets_raw(self.geotweets_path).set_index('userid')
+
+            # remove users with less than 5 tweets
+            # this code should be somewhere else...
+            tweetcount = geotweets.groupby('userid').size()
+            geotweets = geotweets.drop(labels=tweetcount[tweetcount < 5].index)
+
+            self._visits = self.sample(
+                geotweets,
+            )
+
+        return self._visits
+
 
 class StaticDistribution:
     def __init__(self, n):
@@ -289,3 +317,18 @@ class NormalDistribution:
 
     def sample(self):
         return max(1, int(round(np.random.normal(self.mean, self.std))))
+
+
+class VisitsFromFile:
+    def __init__(self, file_path=None):
+        if file_path is None:
+            raise Exception("file_path must be set")
+        self.file_path = file_path
+
+    def describe(self):
+        return {
+            "type": "from_file",
+            "path": self.file_path,
+        }
+    def visits(self):
+        return pd.read_csv(self.file_path).set_index('userid')

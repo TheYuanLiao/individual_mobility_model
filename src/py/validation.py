@@ -261,8 +261,6 @@ class SPSSIM:
             np.put(spatial_weight, quantile_groups.indices[grpkey], 1)
             wx = (Wx * spatial_weight).flatten()
             wy = (Wy * spatial_weight).flatten()
-            # Set trip weight
-            trip_weight = wx.sum()
             # Reset spatial weight matrix to previous value, in order to reuse.
             np.put(spatial_weight, quantile_groups.indices[grpkey], 0)
             score = (2 * wx.mean() * wy.mean() + C1) * (2 * np.cov(wx, wy)[0][1] + C2) / (
@@ -271,12 +269,7 @@ class SPSSIM:
                 grpkey,  # quantile
                 score,  # score
                 wx.sum(),  # sampers_weight
-                wx.mean(),  # sampers_mean
-                wx.var(),  # sampers_var
                 wy.sum(),  # twitter_weight
-                wy.mean(),  # twitter_mean
-                wy.var(),  # twitter_var
-                np.cov(wx, wy)[0][1]  # covariance
             ])
         return pd.DataFrame(
             quantile_scores,
@@ -284,17 +277,12 @@ class SPSSIM:
                 'quantile',
                 'score',
                 'sampers_weight',
-                'sampers_mean',
-                'sampers_var',
                 'twitter_weight',
-                'twitter_mean',
-                'twitter_var',
-                'covariance',
             ],
         ).set_index('quantile')
 
 
-class DistanceMetrics():
+class DistanceMetrics:
     def __init__(self):
         pass
 
@@ -314,5 +302,5 @@ class DistanceMetrics():
             )
         return pd.DataFrame(
             metrics,
-            columns=['distance'] + [t + '_mean' for t in titles] + [t + '_var' for t in titles]
+            columns=['distance'] + [t + '_mean' for t in titles] + [t + '_variance' for t in titles]
         ).set_index('distance')
