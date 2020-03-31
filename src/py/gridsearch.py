@@ -15,7 +15,39 @@ if __name__ == "__main__":
     cfgs = pipeline.config_product(
         visit_factories=[
             # models.VisitsFromGeotweetsFile("./../../dbs/sweden/geotweets.csv"),
-            models.VisitsFromFile("./../../dbs/sweden/visits-transition-mx.csv"),
+            models.Sampler(
+                model=models.PreferentialReturn(
+                    p=0.66,
+                    gamma=0.6,
+                    region_sampling=models.RegionTransitionZipf(beta=0.07, zipfs=1.2),
+                    jump_size_sampling=models.JumpSizeTrueProb(),
+                ),
+                n_days=7 * 20,
+                daily_trips_sampling=models.NormalDistribution(mean=3.14, std=1.8),
+                geotweets_path="./../../dbs/sweden/geotweets.csv",
+            ),
+            models.Sampler(
+                model=models.PreferentialReturn(
+                    p=0.66,
+                    gamma=0.6,
+                    region_sampling=models.RegionTransitionZipf(beta=0.03, zipfs=1.2),
+                    jump_size_sampling=models.JumpSizeTrueProb(),
+                ),
+                n_days=7 * 20,
+                daily_trips_sampling=models.NormalDistribution(mean=3.14, std=1.8),
+                geotweets_path="./../../dbs/sweden/geotweets.csv",
+            ),
+            models.Sampler(
+                model=models.PreferentialReturn(
+                    p=0.66,
+                    gamma=0.6,
+                    region_sampling=models.RegionTransitionZipf(beta=0.09, zipfs=1.2),
+                    jump_size_sampling=models.JumpSizeTrueProb(),
+                ),
+                n_days=7 * 20,
+                daily_trips_sampling=models.NormalDistribution(mean=3.14, std=1.8),
+                geotweets_path="./../../dbs/sweden/geotweets.csv",
+            )
             # models.VisitsFromFile("./../../dbs/sweden/visits-zipf1.2.csv"),
             # models.VisitsFromFile("./../../dbs/sweden/visits-zipf1.5.csv"),
         ],
@@ -43,6 +75,7 @@ if __name__ == "__main__":
             json.dump(cfg.describe(), f, indent=2)
 
         result = pipe.run(cfg)
+        pipe.visits.to_csv("./../../dbs/sweden/visits_{}.csv".format(run_id))
         spssim_scores = dict()
         for scale in validation.scales:
             odmfig = plots.plot_odms(

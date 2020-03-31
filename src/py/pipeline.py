@@ -50,6 +50,7 @@ class Pipeline:
         self.sampers = validation.Sampers()
         self.spssim = validation.SPSSIM()
         self.distance_metrics = validation.DistanceMetrics()
+        self.visits = None
 
     def prepare(self):
         self.sampers.prepare()
@@ -63,6 +64,7 @@ class Pipeline:
             geometry=gpd.points_from_xy(home_locations.x, home_locations.y),
         )
         visits = cfg.visit_factory.visits()
+        self.visits = visits
         converted_visits = self.sampers.convert(visits)
         result = Result()
         for scale in validation.scales:

@@ -61,7 +61,6 @@ class PreferentialReturn:
 
         S = self.regions.shape[0]
         self.exploration_prob = self.p * (S ** -self.gamma)
-        self.exploration_prob = 0.0
 
     def next(self, prev):
         """
@@ -343,6 +342,8 @@ class Sampler:
                 for timeslot in range(self.daily_trips_sampling.sample()):
                     current = self.model.next(prev)
                     samples.append([uid, day, (timeslot+1)] + current)
+                    if current[0] == 'point':
+                        break
                     prev = current
 
             n_done += 1
