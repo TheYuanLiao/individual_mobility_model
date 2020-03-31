@@ -342,7 +342,7 @@ class Sampler:
 
                 for timeslot in range(self.daily_trips_sampling.sample()):
                     current = self.model.next(prev)
-                    samples.append([uid, day, timeslot + 1] + current)
+                    samples.append([uid, day, (timeslot+1)] + current)
                     prev = current
 
             n_done += 1
@@ -444,9 +444,10 @@ class VisitsFromGeotweetsFile:
 
 
 def geotweets_to_visits(geotweets):
+    first_day = v['createdat'].min()
     v = geotweets.assign(
         kind='region',
-        day=geotweets.createdat.dt.strftime('%Y-%m'),
+        day=(v['createdat'] - first_day).dt.days,
     ).rename(columns={
         "hourofday": "timeslot"
     })[[
@@ -456,5 +457,6 @@ def geotweets_to_visits(geotweets):
         'day',
         'timeslot',
         'kind',
+        'label',
     ]]
     return v
