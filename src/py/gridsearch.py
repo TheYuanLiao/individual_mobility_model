@@ -14,18 +14,18 @@ results_dir = "./../../results"
 if __name__ == "__main__":
     cfgs = pipeline.config_product(
         visit_factories=[
-            models.VisitsFromGeotweetsFile("./../../dbs/sweden/geotweets.csv"),
-            #models.VisitsFromFile("./../../dbs/sweden/visits-zipf1.0.csv"),
-            #models.VisitsFromFile("./../../dbs/sweden/visits-zipf1.2.csv"),
-            #models.VisitsFromFile("./../../dbs/sweden/visits-zipf1.5.csv"),
+            # models.VisitsFromGeotweetsFile("./../../dbs/sweden/geotweets.csv"),
+            models.VisitsFromFile("./../../dbs/sweden/visits-transition-mx.csv"),
+            # models.VisitsFromFile("./../../dbs/sweden/visits-zipf1.2.csv"),
+            # models.VisitsFromFile("./../../dbs/sweden/visits-zipf1.5.csv"),
         ],
         home_locations_paths=[
             "./../../dbs/sweden/homelocations.csv",
         ],
         gravity_models=[
             validation.GravityModel(beta=0.03),
-            #validation.GravityModel(beta=0.025),
-            #validation.GravityModel(beta=0.035),
+            # validation.GravityModel(beta=0.025),
+            # validation.GravityModel(beta=0.035),
         ]
     )
     pipe = pipeline.Pipeline()
@@ -54,7 +54,7 @@ if __name__ == "__main__":
                 ],
                 ['model', 'gravity_seed', 'gravity', 'sampers'],
             )
-            odmfig.savefig("{}/odms-{}.png".format(run_directory, scale),bbox_inches='tight',dpi=140)
+            odmfig.savefig("{}/odms-{}.png".format(run_directory, scale), bbox_inches='tight', dpi=140)
 
             score = result.spssim_scores[scale]
             score.to_csv("{}/score-{}.csv".format(run_directory, scale))

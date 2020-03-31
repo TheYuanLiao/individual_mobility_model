@@ -42,31 +42,33 @@ def plot_spssim_score(score):
     return fig
 
 
-def plot_distance_metrics(distance_metrics, prefixes=None):
+def plot_distance_metrics(distance_metrics, prefixes=None, show_norm=True, show_log=True):
     if prefixes is None:
         raise Exception("prefixes must be set")
     views = ['mean', 'variance']
-    fig, axes = plt.subplots(len(views), 1, figsize=(15, 4*len(views)))
+    fig, axes = plt.subplots(len(views), 1, figsize=(15, 4 * len(views)))
     for (view, ax) in zip(views, axes):
         ax.set_title(view.capitalize())
         columns = [p + '_' + view for p in prefixes]
-        distance_metrics[columns].plot(
-            ax=ax,
-        ).legend(
-            labels=prefixes,
-            # put legend outside of plot for visibility
-            loc='upper left',
-            bbox_to_anchor=(1.05, 1)
-        )
-        logax = ax.twinx()
-        distance_metrics[columns].plot(
-            ax=logax,
-            logy=True,
-            style='--',
-        ).legend(
-            labels=[p + ' (log10)' for p in prefixes],
-            # put legend outside of plot for visibility
-            loc='upper left',
-            bbox_to_anchor=(1.05, 0.65)
-        )
+        if show_norm:
+            distance_metrics[columns].plot(
+                ax=ax,
+            ).legend(
+                labels=prefixes,
+                # put legend outside of plot for visibility
+                loc='upper left',
+                bbox_to_anchor=(1.05, 1)
+            )
+        if show_log:
+            logax = ax.twinx()
+            distance_metrics[columns].plot(
+                ax=logax,
+                logy=True,
+                style='--',
+            ).legend(
+                labels=[p + ' (log10)' for p in prefixes],
+                # put legend outside of plot for visibility
+                loc='upper left',
+                bbox_to_anchor=(1.05, 0.65)
+            )
     return fig

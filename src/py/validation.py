@@ -139,7 +139,6 @@ class Sampers:
             .reset_index().set_index(['userid', 'day', 'timeslot']).sort_index() \
             .reset_index().set_index('userid')
 
-        print("Creating ODM...")
         sparse_odm = mscthesis.visit_gaps(visits[['zone']]) \
             .groupby(['zone_origin', 'zone_destination']).size() \
             .reindex(self.odm[scale].index, fill_value=0.0)

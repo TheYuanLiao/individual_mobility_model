@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.metrics.pairwise import haversine_distances
 from math import pi, cos, sin
 import mscthesis
+import validation
 
 
 class PreferentialReturn:
@@ -60,6 +61,7 @@ class PreferentialReturn:
 
         S = self.regions.shape[0]
         self.exploration_prob = self.p * (S ** -self.gamma)
+        self.exploration_prob = 0.0
 
     def next(self, prev):
         """
@@ -81,7 +83,10 @@ class PreferentialReturn:
             lat, lng = latlngshift(prev_lat, prev_lng, jump_size_m, direction_rad)
             return ["point", lat, lng, -1]
         else:
-            region_idx = self.region_sampling.sample()
+            previous_region_idx = None
+            if prev[0] == 'region':
+                previous_region_idx = prev[3]
+            region_idx = self.region_sampling.sample(previous_region_idx=previous_region_idx)
             region = self.regions.loc[region_idx]
             return ["region", region.latitude, region.longitude, region_idx]
 
@@ -116,7 +121,7 @@ class RegionTrueProb:
         visits = tweets.groupby('region').size().sort_values(ascending=False)
         self.region_probs = visits / visits.sum()
 
-    def sample(self):
+    def sample(self, previous_region_idx=None):
         return np.random.choice(
             a=self.region_probs.index,
             p=self.region_probs.values,
@@ -148,10 +153,85 @@ class RegionZipfProb:
         probs = np.power(np.arange(1, visits.shape[0] + 1), -self.s)
         self.region_probs = pd.Series(probs / np.sum(probs), index=visits.index)
 
-    def sample(self):
+    def sample(self, previous_region_idx=None):
         return np.random.choice(
             a=self.region_probs.index,
             p=self.region_probs.values,
+            size=1,
+        )[0]
+
+
+class RegionTransitionZipf:
+    """
+    A region probability sampler that scales the observed probability of regions with
+    the distance between regions.
+    """
+
+    def __init__(self, zipfs=1.2, beta=0.03):
+        self.zipfs = zipfs
+        self.beta = beta
+
+        self.distances = None
+        self.seed = None
+        # When previous visit was to a region transition is used
+        self.transition_mx = None
+        # When previous visit was to a random point global prob is used
+        self.region_probabilities = None
+
+    def describe(self):
+        return {
+            "name": "transitionZipf",
+            "zipfs": self.zipfs,
+            "beta": self.beta,
+        }
+
+    def fit(self, tweets):
+        reggrp = tweets.groupby('region')
+        regions = reggrp.head(1).set_index('region').sort_index()
+
+        distances_km = pd.DataFrame(
+            (6371.0088 * haversine_distances(
+                np.radians(regions[['latitude', 'longitude']]),
+            )),
+            index=regions.index,
+            columns=regions.index,
+        )
+        self.distances = distances_km.stack()
+        seed = np.exp(-self.beta * distances_km)
+        seed = seed / seed.sum()
+        self.seed = seed
+
+        region_counts = reggrp.size().sort_values(ascending=False)
+        region_probs = np.power(
+            np.arange(1, region_counts.shape[0] + 1),
+            -self.zipfs,
+        )
+        region_probs = pd.Series(
+            region_probs / np.sum(region_probs),
+            index=region_counts.index,
+        ).sort_index()
+        self.region_probabilities = region_probs
+        fitted = validation.ipf(seed.values, region_probs.values, region_probs.values)
+        transition_mx = pd.DataFrame(
+            fitted,
+            index=regions.index,
+            columns=regions.index,
+        )
+        # Normalize row (each row should sum to 1)
+        transition_mx = transition_mx.div(
+            transition_mx.sum(axis=1),  # summation of each row
+            axis=0,
+        )
+        self.transition_mx = transition_mx.stack()
+
+    def sample(self, previous_region_idx=None):
+        if previous_region_idx is None:
+            probs = self.region_probabilities
+        else:
+            probs = self.transition_mx.loc[previous_region_idx]
+        return np.random.choice(
+            a=probs.index,
+            p=probs.values,
             size=1,
         )[0]
 
@@ -246,7 +326,6 @@ class Sampler:
         n_done = 0
         for uid in tweets.index.unique():
             utweets = tweets.loc[uid]
-
             # Re-fit the model on this user
             self.model.fit(utweets)
 
@@ -263,7 +342,7 @@ class Sampler:
 
                 for timeslot in range(self.daily_trips_sampling.sample()):
                     current = self.model.next(prev)
-                    samples.append([uid, day, timeslot+1] + current)
+                    samples.append([uid, day, timeslot + 1] + current)
                     prev = current
 
             n_done += 1
@@ -359,18 +438,23 @@ class VisitsFromGeotweetsFile:
     def visits(self):
         if self._visits is None:
             v = mscthesis.read_geotweets_raw(self.file_path).set_index('userid')
-            v = v.assign(
-                kind='region',
-                day=v.createdat.dt.strftime('%Y-%m'),
-            ).rename(columns={
-                "hourofday": "timeslot"
-            })[[
-                'region',
-                'latitude',
-                'longitude',
-                'day',
-                'timeslot',
-                'kind',
-            ]]
+            v = geotweets_to_visits(v)
             self._visits = v
         return self._visits
+
+
+def geotweets_to_visits(geotweets):
+    v = geotweets.assign(
+        kind='region',
+        day=geotweets.createdat.dt.strftime('%Y-%m'),
+    ).rename(columns={
+        "hourofday": "timeslot"
+    })[[
+        'region',
+        'latitude',
+        'longitude',
+        'day',
+        'timeslot',
+        'kind',
+    ]]
+    return v
