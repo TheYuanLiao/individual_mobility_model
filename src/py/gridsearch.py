@@ -19,7 +19,7 @@ if __name__ == "__main__":
                 model=models.PreferentialReturn(
                     p=0.66,
                     gamma=0.6,
-                    region_sampling=models.RegionTransitionZipf(beta=0.07, zipfs=1.2),
+                    region_sampling=models.RegionTransitionZipf(beta=0.02, zipfs=1.2),
                     jump_size_sampling=models.JumpSizeTrueProb(),
                 ),
                 n_days=7 * 20,
@@ -30,7 +30,7 @@ if __name__ == "__main__":
                 model=models.PreferentialReturn(
                     p=0.66,
                     gamma=0.6,
-                    region_sampling=models.RegionTransitionZipf(beta=0.03, zipfs=1.2),
+                    region_sampling=models.RegionTransitionZipf(beta=0.035, zipfs=1.2),
                     jump_size_sampling=models.JumpSizeTrueProb(),
                 ),
                 n_days=7 * 20,
@@ -41,7 +41,7 @@ if __name__ == "__main__":
                 model=models.PreferentialReturn(
                     p=0.66,
                     gamma=0.6,
-                    region_sampling=models.RegionTransitionZipf(beta=0.09, zipfs=1.2),
+                    region_sampling=models.RegionTransitionZipf(beta=0.04, zipfs=1.2),
                     jump_size_sampling=models.JumpSizeTrueProb(),
                 ),
                 n_days=7 * 20,
