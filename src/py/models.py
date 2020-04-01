@@ -445,10 +445,10 @@ class VisitsFromGeotweetsFile:
 
 
 def geotweets_to_visits(geotweets):
-    first_day = v['createdat'].min()
+    first_day = geotweets['createdat'].min()
     v = geotweets.assign(
         kind='region',
-        day=(v['createdat'] - first_day).dt.days,
+        day=(geotweets['createdat'] - first_day).dt.days,
     ).rename(columns={
         "hourofday": "timeslot"
     })[[

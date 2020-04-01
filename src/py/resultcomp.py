@@ -10,6 +10,8 @@ def string_range(strings, start=None, end=None):
     keep = []
     include = False
     for string in strings:
+        if string.startswith('baseline'):
+            keep.append(string)
         if string.startswith(start):
             include = True
         if include:
@@ -117,18 +119,25 @@ def read_scale_distance_metrics(directories, scale):
 
 
 def plot_distance_metrics(dms):
-    fig, all_axes = plt.subplots(3, 3, figsize=(20,15), sharey=True)
+    fig, all_axes = plt.subplots(3, 2, figsize=(20,15), sharey=True)
     for (scale, axes) in zip(
         dms.index.get_level_values(level=0).unique(),
         all_axes
     ):
-        for (col, ax) in zip(['model_mean', 'gravity_mean', 'sampers_mean'], axes):
+        for (col, ax) in zip(['model_mean', 'gravity_mean'], axes):
             ax.set_title("{} - {}".format(scale, col))
             dms.loc[scale][col].unstack(level=0).plot(
                 ax=ax,
                 rot=90,
                 logy=True,
                 xticks=[],
+            ).legend(bbox_to_anchor=(1, 1))
+            dms.loc[scale]['sampers_mean'].loc['baseline'].plot(
+                ax=ax,
+                rot=90,
+                logy=True,
+                xticks=[],
+                label='sampers_mean'
             ).legend(bbox_to_anchor=(1, 1))
     return fig
 
