@@ -88,7 +88,7 @@ class Pipeline:
 
             spssim_score = self.spssim.score(
                 self.sampers.odm[scale],
-                dense_odm,
+                sparse_odm,
                 self.sampers.quantile_groups[scale],
             )
 
