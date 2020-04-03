@@ -33,6 +33,30 @@ def cluster(ts, eps_km=0.1, min_samples=1):
     return regions
 
 
+def cluster_groups(ts, min_samples=1):
+    """
+    Clusters each users regions with DBSCAN.
+    :param ts:
+    [userid*, latitude, longitude, region, ...rest]
+
+    :param min_samples:
+    min_samples parameter of DBSCAN.
+
+    :return:
+    [userid*, latitude, longitude, region, group ...rest]
+    """
+
+    def f(_ts):
+        eps_km = len(_ts['region'].unique()) / 15
+        kms_per_radian = 6371.0088
+        coords_rad = np.radians(_ts[['latitude', 'longitude']].values)
+        cls = DBSCAN(eps=eps_km / kms_per_radian, min_samples=min_samples, metric='haversine').fit(coords_rad)
+        return _ts.assign(group=pd.Series(cls.labels_, index=_ts.index).values)
+
+    groups = ts.groupby('userid', as_index=False).apply(f)
+    return groups
+
+
 def during_home(ts):
     """
     Only returns tweets that are during "home-hours".

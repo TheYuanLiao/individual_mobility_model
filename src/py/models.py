@@ -160,6 +160,38 @@ class RegionZipfProb:
         )[0]
 
 
+class GroupRegionZipfProb:
+    """
+    A region probability sampler that preserves the "rank" of observed regions, but
+    with probabilities sampled from a zipfian distribution.
+
+    :param s
+    Parameter S of the Zipf distribution
+    """
+
+    def __init__(self, s=1.2):
+        self.s = s
+        self.region_probs = None
+
+    def describe(self):
+        return {
+            "name": "zipf",
+            "s": self.s
+        }
+
+    def fit(self, tweets):
+        visits = tweets.groupby('region').size().sort_values(ascending=False)
+        probs = np.power(np.arange(1, visits.shape[0] + 1), -self.s)
+        self.region_probs = pd.Series(probs / np.sum(probs), index=visits.index)
+
+    def sample(self, previous_region_idx=None):
+        return np.random.choice(
+            a=self.region_probs.index,
+            p=self.region_probs.values,
+            size=1,
+        )[0]
+
+
 class RegionTransitionZipf:
     """
     A region probability sampler that scales the observed probability of regions with
