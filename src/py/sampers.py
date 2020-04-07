@@ -15,6 +15,7 @@ odms = {
 }
 
 bbox = {
+    "national": regions.counties.to_crs("EPSG:3006"),
     "east": regions.counties[regions.counties['ID'].isin(['01', '03', '04', '09', '18', '19'])].to_crs('EPSG:3006'),
     "west": regions.counties[regions.counties['ID'].isin(['13', '14', '17'])].to_crs('EPSG:3006')
 }
