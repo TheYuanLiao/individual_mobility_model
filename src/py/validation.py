@@ -300,9 +300,9 @@ class DistanceMetrics:
         for grpkey in quantile_groups.groups:
             odm_grps = [o.iloc[quantile_groups.indices[grpkey]] for o in odms]
             metrics.append(
-                [grpkey] + [g.mean() for g in odm_grps] + [g.var() for g in odm_grps]
+                [grpkey] + [g.mean() for g in odm_grps] + [g.var() for g in odm_grps] + [g.sum() for g in odm_grps]
             )
         return pd.DataFrame(
             metrics,
-            columns=['distance'] + [t + '_mean' for t in titles] + [t + '_variance' for t in titles]
+            columns=['distance'] + [t + '_mean' for t in titles] + [t + '_variance' for t in titles] + [t + '_sum' for t in titles]
         ).set_index('distance')
