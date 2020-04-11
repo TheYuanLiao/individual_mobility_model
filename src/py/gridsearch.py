@@ -14,8 +14,17 @@ results_dir = "./../../results"
 if __name__ == "__main__":
     cfgs = pipeline.config_product(
         visit_factories=[
-            # models.VisitsFromGeotweetsFile("./../../dbs/sweden/geotweets.csv"),
-            models.VisitsFromFile("./../../dbs/sweden/visits_20200401_144409.csv"),
+            models.Sampler(
+                model=models.PreferentialReturn(
+                    p=0.2,
+                    gamma=0.8,
+                    region_sampling=models.RegionTransitionZipf(beta=0.05, zipfs=1.2),
+                    jump_size_sampling=models.JumpSizeTrueProb(),
+                ),
+                n_days=7 * 30,
+                daily_trips_sampling=models.NormalDistribution(mean=3.14, std=1.8),
+                geotweets_path="./../../dbs/sweden/geotweets.csv",
+            ),  # Model
             # models.VisitsFromFile("./../../dbs/sweden/visits-zipf1.5.csv"),
         ],
         home_locations_paths=[
@@ -42,7 +51,7 @@ if __name__ == "__main__":
             json.dump(cfg.describe(), f, indent=2)
 
         result = pipe.run(cfg)
-        #pipe.visits.to_csv("./../../dbs/sweden/visits_{}.csv".format(run_id))
+        pipe.visits.to_csv("./../../dbs/sweden/visits_{}.csv".format(run_id))
         spssim_scores = dict()
         for scale in validation.scales:
             odmfig = plots.plot_odms(

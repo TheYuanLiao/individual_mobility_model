@@ -1,14 +1,14 @@
 {
   "national": {
-    "sampers_weighted_score": 0.5946714306595139,
-    "twitter_weighted_score": 0.5227632465181455
+    "sampers_weighted_score": 0.5934069170018561,
+    "twitter_weighted_score": 0.5759869272629997
   },
   "east": {
-    "sampers_weighted_score": 0.21763757915585674,
-    "twitter_weighted_score": 0.5170865524968603
+    "sampers_weighted_score": 0.32191215542311863,
+    "twitter_weighted_score": 0.3361034186472529
   },
   "west": {
-    "sampers_weighted_score": 0.35522409359432267,
-    "twitter_weighted_score": 0.6369492663103703
+    "sampers_weighted_score": 0.3918958550164292,
+    "twitter_weighted_score": 0.36959191953688375
   }
 }

@@ -258,6 +258,7 @@ class RegionTransitionZipf:
     def sample(self, previous_region_idx=None):
         if previous_region_idx is None:
             probs = self.region_probabilities
+            print(probs)
         else:
             probs = self.transition_mx.loc[previous_region_idx]
         return np.random.choice(
@@ -361,10 +362,7 @@ class Sampler:
             self.model.fit(utweets)
 
             # Find home location
-            home = utweets[utweets['label'] == 'home']
-            # edge case: When there is only one visit to home location `home` is a single row already.
-            if home.shape[0] > 1:
-                home = home.iloc[0]
+            home = utweets[utweets['label'] == 'home'].iloc[0]
 
             for day in range(self.n_days):
                 # Every days starts at home location
@@ -392,11 +390,13 @@ class Sampler:
             geotweets = mscthesis.read_geotweets_raw(self.geotweets_path).set_index('userid')
 
             # this code should be somewhere else...
+            geotweets = geotweets[(geotweets['weekday'] < 6) & (0 < geotweets['weekday'])]
+            home_visits = geotweets.query("label == 'home'").groupby('userid').size()
+            geotweets = geotweets.loc[home_visits.index]
             tweetcount = geotweets.groupby('userid').size()
             geotweets = geotweets.drop(labels=tweetcount[tweetcount < 20].index)
             regioncount = geotweets.groupby(['userid', 'region']).size().groupby('userid').size()
             geotweets = geotweets.drop(labels=regioncount[regioncount < 2].index)
-
             # Ensure the tweets are sorted chronologically
             geotweets = geotweets.sort_values(by=['userid', 'createdat'])
 
@@ -471,6 +471,7 @@ class VisitsFromGeotweetsFile:
     def visits(self):
         if self._visits is None:
             v = mscthesis.read_geotweets_raw(self.file_path).set_index('userid')
+            v = v[(v['weekday'] < 6) & (0 < v['weekday'])]
             v = geotweets_to_visits(v)
             self._visits = v
         return self._visits
