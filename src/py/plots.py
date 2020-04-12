@@ -83,8 +83,11 @@ def plot_visitation_frequency(tweets):
     n_largest_locs_40x = n_largest_locs_40.to_frame().groupby('userid').apply(lambda df: df.assign(rank=np.add(np.arange(len(df)), 1)))
     n_largest_locs_60x = n_largest_locs_60.to_frame().groupby('userid').apply(lambda df: df.assign(rank=np.add(np.arange(len(df)), 1)))
     n_largest_locs_20y = n_largest_locs_20x.groupby('rank').sum()[0]
+    n_largest_locs_20y = n_largest_locs_20y / (n_largest_locs_20x.reset_index()[['userid', 'rank']].groupby('rank').count()['userid'])
     n_largest_locs_40y = n_largest_locs_40x.groupby('rank').sum()[0]
+    n_largest_locs_40y = n_largest_locs_40y / (n_largest_locs_40x.reset_index()[['userid', 'rank']].groupby('rank').count()['userid'])
     n_largest_locs_60y = n_largest_locs_60x.groupby('rank').sum()[0]
+    n_largest_locs_60y = n_largest_locs_60y / (n_largest_locs_60x.reset_index()[['userid', 'rank']].groupby('rank').count()['userid'])
 
     mpl.rcParams['font.size'] = 20.0
     values_20, base_20 = np.histogram(n_largest_locs_20y.index, weights=n_largest_locs_20y.values, bins=np.add(np.arange(21), 1), density=True)
