@@ -74,7 +74,7 @@ def plot_distance_metrics(distance_metrics, prefixes=None, show_norm=True, show_
             )
     return fig
 
-def plot_visitation_frequency(tweets):
+def plot_visitation_frequency(tweets, ax, title='Baseline'):
     n_largest_locs = tweets.groupby(['userid', 'region']).size()
     n_largest_locs_20 = n_largest_locs.groupby('userid').nlargest(20).droplevel(1)
     n_largest_locs_40 = n_largest_locs.groupby('userid').nlargest(40).droplevel(1)
@@ -93,18 +93,18 @@ def plot_visitation_frequency(tweets):
     values_20, base_20 = np.histogram(n_largest_locs_20y.index, weights=n_largest_locs_20y.values, bins=np.add(np.arange(21), 1), density=True)
     values_40, base_40 = np.histogram(n_largest_locs_40y.index, weights=n_largest_locs_40y.values, bins=np.add(np.arange(41), 1), density=True)
     values_60, base_60 = np.histogram(n_largest_locs_60y.index, weights=n_largest_locs_60y.values, bins=np.add(np.arange(61), 1), density=True)
-    fig = plt.figure(figsize=(7, 10))
-    plt.plot(base_20[:-1], values_20, 'v', c='blue', markersize=5, label='S = 20')
-    plt.plot(base_40[:-1], values_40, 'o', c='red', markersize=5, label='S = 40')
-    plt.plot(base_60[:-1], values_60, 's', c='black', markersize=5, label='S = 60')
-    plt.ylabel('$f_k$')
-    plt.yscale('log')
-    plt.xscale('log')
-    plt.xlabel('k')
-    plt.legend(loc='best', frameon=False)
-    plt.ylim(0.001, 1)
-    plt.xlim(0.9, 100)
-    return fig
+    ax.plot(base_20[:-1], values_20, 'v', c='blue', markersize=5, label='S = 20', zorder=3)
+    ax.plot(base_40[:-1], values_40, 'o', c='red', markersize=5, label='S = 40', zorder=2)
+    ax.plot(base_60[:-1], values_60, 's', c='black', markersize=5, label='S = 60', zorder=1)
+    ax.set_ylabel('$f_k$')
+    ax.set_yscale('log')
+    ax.set_xscale('log')
+    ax.set_xlabel('k')
+    ax.legend(loc='best', frameon=False)
+    ax.set_ylim(0.001, 1)
+    ax.set_xlim(0.9, 100)
+    ax.set_title(title)
+    return ax
 
 
 def plot_distinct_locs_over_time(tweets, label='Emperical'):
