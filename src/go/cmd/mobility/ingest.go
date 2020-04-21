@@ -20,7 +20,7 @@ func (a *mobility) ingest() *cli.Command {
 		Action: func(context *cli.Context) error {
 			directory := context.Path("directory")
 			ing := ingest.Ingester{
-				TweetRepo:   &repository.TweetRepo{DB: a.db},
+				TweetRepo:   &repository.GeoTweetRepo{DB: a.db},
 				ProfileRepo: &repository.ProfileRepo{DB: a.db},
 			}
 			if context.Bool("create") {
