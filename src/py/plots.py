@@ -46,7 +46,7 @@ def plot_spssim_score(score):
 def plot_distance_metrics(distance_metrics, prefixes=None, show_norm=True, show_log=True):
     if prefixes is None:
         raise Exception("prefixes must be set")
-    views = ['mean', 'variance']
+    views = ['sum', 'mean', 'variance']
     fig, axes = plt.subplots(len(views), 1, figsize=(15, 4 * len(views)))
     for (view, ax) in zip(views, axes):
         ax.set_title(view.capitalize())
@@ -175,4 +175,19 @@ def plot_dist_distribution(dms, scale):
 
     return fig, axes
 
+
+def generic_plot_dist_distribution(ax, distance_sums=[], titles=[]):
+    ax.set_title("Trip distance distribution")
+
+    for d in distance_sums:
+        ax.plot(d.index.right, d.values, zorder=2)
+
+    for x in distance_sums[0].index.left:
+        ax.axvline(x, color='black', linewidth=0.25, zorder=1)
+    ax.axvline(distance_sums[0].index.right[-1], color='black', linewidth=0.25, zorder=1)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_ylabel('Percentage of trips')
+    ax.set_xlabel('Distance')
+    ax.legend(labels=titles)
 
