@@ -242,7 +242,7 @@ class RegionTransitionZipf:
             index=region_counts.index,
         ).sort_index()
         self.region_probabilities = region_probs
-        fitted = validation.ipf(seed.values, region_probs.values, region_probs.values)
+        fitted = validation.ipf(seed.values, region_probs.values, region_probs.values, max_iter=10)
         transition_mx = pd.DataFrame(
             fitted,
             index=regions.index,
