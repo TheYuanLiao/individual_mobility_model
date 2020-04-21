@@ -205,6 +205,7 @@ class GravityModel:
 def ipf(seed, column_margin, row_margin, max_iter=5000, tolerance=1e-8):
     curr_seed = seed
     converged = False
+    diff = None
     for i in range(max_iter):
         row_f = (row_margin / np.sum(curr_seed, axis=1))
         seed = (seed.T * row_f).T
@@ -213,12 +214,12 @@ def ipf(seed, column_margin, row_margin, max_iter=5000, tolerance=1e-8):
         diff = np.amax(np.absolute(np.subtract(seed, curr_seed)))
         curr_seed = seed
         # Only check convergence every 10th iteration
-        if i % 10 == 0 and diff < tolerance:
+        if diff < tolerance:
             converged = True
             print("IPF converged after", i, "iterations")
             break
     if not converged:
-        print("IPF did not converge with tolerance", tolerance, "after", max_iter, "iterations")
+        print("IPF did not converge with tolerance", tolerance, "after", max_iter, "iterations. Had diff", diff)
     return curr_seed
 
 
