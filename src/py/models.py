@@ -277,9 +277,7 @@ class RegionTransitionZipf:
         if previous_region_idx is None:
             probs = self.probs_from_point(previous_point)
         else:
-            probs = self.transition_mx.loc[previous_region_idx].copy()
-            probs.loc[previous_region_idx] = 0
-            probs = probs / probs.sum()
+            probs = self.transition_mx.loc[previous_region_idx]
         return np.random.choice(
             a=probs.index,
             p=probs.values,
@@ -390,6 +388,8 @@ class Sampler:
 
                 for timeslot in range(self.daily_trips_sampling.sample()):
                     current = self.model.next(prev)
+                    if prev[0] == 'region' and current[0] == 'region' and prev[3] == current[3]:
+                        continue
                     samples.append([uid, day, (timeslot+1)] + current)
                     prev = current
 
