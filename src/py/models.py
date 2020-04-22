@@ -230,6 +230,7 @@ class RegionTransitionZipf:
         )
         self.distances = distances_km.stack()
         seed = np.exp(-self.beta * distances_km)
+        seed += 0.000001
         seed = seed / seed.sum()
         self.seed = seed
 
