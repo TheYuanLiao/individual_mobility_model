@@ -85,7 +85,7 @@ class PreferentialReturn:
             previous_region_idx = None
             if prev[0] == 'region':
                 previous_region_idx = prev[3]
-            region_idx = self.region_sampling.sample(previous_region_idx=previous_region_idx)
+            region_idx = self.region_sampling.sample(previous_region_idx=previous_region_idx, previous_point=prev)
             region = self.regions.loc[region_idx]
             return ["region", region.latitude, region.longitude, region_idx]
 
@@ -208,6 +208,7 @@ class RegionTransitionZipf:
         self.transition_mx = None
         # When previous visit was to a random point global prob is used
         self.region_probabilities = None
+        self.regions = None
 
     def describe(self):
         return {
@@ -219,7 +220,7 @@ class RegionTransitionZipf:
     def fit(self, tweets):
         reggrp = tweets.groupby('region')
         regions = reggrp.head(1).set_index('region').sort_index()
-
+        self.regions = regions
         distances_km = pd.DataFrame(
             (6371.0088 * haversine_distances(
                 np.radians(regions[['latitude', 'longitude']]),
@@ -255,12 +256,29 @@ class RegionTransitionZipf:
         )
         self.transition_mx = transition_mx.stack()
 
-    def sample(self, previous_region_idx=None):
+    def probs_from_point(self, prev):
+        regions = self.regions
+        distances_km = pd.DataFrame(
+            (6371.0088 * haversine_distances(
+                np.radians(regions[['latitude', 'longitude']]),
+                Y=np.radians([[prev[1], prev[2]]]),
+            )),
+            index=regions.index,
+            columns=["c"],
+        )
+        distances_km = distances_km.c
+        region_probs = self.region_probabilities
+        prob = region_probs * np.exp(-self.beta * distances_km)
+        prob = prob / prob.sum()
+        return prob
+
+    def sample(self, previous_region_idx=None, previous_point=None):
         if previous_region_idx is None:
-            probs = self.region_probabilities
-            print(probs)
+            probs = self.probs_from_point(previous_point)
         else:
-            probs = self.transition_mx.loc[previous_region_idx]
+            probs = self.transition_mx.loc[previous_region_idx].copy()
+            probs.loc[previous_region_idx] = 0
+            probs = probs / probs.sum()
         return np.random.choice(
             a=probs.index,
             p=probs.values,
@@ -372,8 +390,6 @@ class Sampler:
                 for timeslot in range(self.daily_trips_sampling.sample()):
                     current = self.model.next(prev)
                     samples.append([uid, day, (timeslot+1)] + current)
-                    if current[0] == 'point':
-                        break
                     prev = current
 
             n_done += 1
