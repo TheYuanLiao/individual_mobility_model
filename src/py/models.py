@@ -388,8 +388,6 @@ class Sampler:
 
                 for timeslot in range(self.daily_trips_sampling.sample()):
                     current = self.model.next(prev)
-                    if prev[0] == 'region' and current[0] == 'region' and prev[3] == current[3]:
-                        continue
                     samples.append([uid, day, (timeslot+1)] + current)
                     prev = current
 

@@ -159,6 +159,7 @@ def plot_dist_distribution(dms, scale):
     sq_err = np.square(np.subtract(n['sampers_sum'], n['model_sum']))
     print('Model MSE: {:.5e}'.format(sq_err.loc['Model'].mean()))
     print('Baseline MSE: {:.5e}'.format(sq_err.loc['Baseline'].mean()))
+    print('20200424_102051 MSE: {:.5e}'.format(sq_err.loc['20200424_102051'].mean()))
     sq_err.unstack(level=0).plot(
         ax=axes[1],
         rot=90,
