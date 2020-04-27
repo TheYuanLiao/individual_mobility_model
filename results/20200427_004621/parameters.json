@@ -1,0 +1,29 @@
+{
+  "visits": {
+    "model": {
+      "p": 0.8,
+      "gamma": 0.2,
+      "region_sampling": {
+        "name": "transitionZipf",
+        "zipfs": 1.2,
+        "beta": 0.06
+      },
+      "jump_size_sampling": {
+        "name": "trueProb"
+      }
+    },
+    "daily_trips_sampling": {
+      "name": "normal",
+      "mean": 3.14,
+      "std": 1.8
+    },
+    "n_days": 140,
+    "geotweets_path": "./../../dbs/sweden/geotweets.csv"
+  },
+  "home_locations": "./../../dbs/sweden/homelocations.csv",
+  "gravity_model": {
+    "beta": 0.03,
+    "max_iter": 5000,
+    "tolerance": 1e-08
+  }
+}
