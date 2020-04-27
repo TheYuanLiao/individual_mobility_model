@@ -2,6 +2,8 @@ import os
 import sys
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
+import json
 
 results_dir = './../../results'
 
@@ -140,6 +142,32 @@ def plot_distance_metrics(dms):
                 label='sampers_mean'
             ).legend(bbox_to_anchor=(1, 1))
     return fig
+
+def results_mse(directories=None, start=None, end=None):
+    if directories is None:
+        result_directories = sorted(os.listdir(results_dir))
+        directories = string_range(result_directories, start, end)
+    df = pd.DataFrame(columns=['scale', 'directory', 'p', 'gamma', 'beta', 'mse'])
+    dms = read_distance_metrics(directories=directories)
+    dms = dms[dms['sampers_mean'] != 0.0]
+    df = mse(dms.loc['national'], 'national', df)
+    df = mse(dms.loc['east'], 'east', df)
+    df = mse(dms.loc['west'], 'west', df)
+    return df
+
+def mse(dms, scale, df):
+    sq_errs = np.square(np.subtract(dms['sampers_sum'], dms['model_sum']))
+    for model in dms.index.get_level_values(level=0).unique():
+        with open(results_dir + '/' + model+ '/parameters.json') as f:
+            d = json.load(f)
+
+        if model != 'baseline':
+            df2 = pd.DataFrame({'scale': [scale], 'directory': [model], 'p': [d['visits']['model']['p']], 'gamma': [d['visits']['model']['gamma']], 'beta': [d['visits']['model']['region_sampling']['beta']], 'mse': [sq_errs.loc[model].mean()]})
+        else:
+            df2 = pd.DataFrame({'scale': [scale], 'directory': [model], 'p': [None], 'gamma': [None], 'beta': [None], 'mse': [sq_errs.loc[model].mean()]})
+        df = df.append(df2)
+    return df
+
 
 if __name__ == "__main__":
     print(len(sys.argv))
