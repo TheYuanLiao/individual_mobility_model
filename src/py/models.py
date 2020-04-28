@@ -60,6 +60,7 @@ class PreferentialReturn:
     def fit(self, tweets):
         self.region_sampling.fit(tweets)
         self.jump_size_sampling.fit(tweets)
+        self.direction_sampling.fit(tweets)
 
         self.regions = tweets.groupby('region').head(1).set_index('region')
 
