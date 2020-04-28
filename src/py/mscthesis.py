@@ -391,15 +391,15 @@ def spssim(X=None, Y=None, D=None, nquantiles=20):
         score = (2 * wx.mean() * wy.mean() + C1) * (2 * np.cov(wx, wy)[0][1] + C2) / (
                 (wx.mean() ** 2 + wy.mean() ** 2 + C1) * (wx.var() + wy.var() + C2))
         quantile_scores.append([
-            grpkey,                 # quantile
-            score,                  # score
-            wx.sum(),               # sampers_weight
-            wx.mean(),              # sampers_mean
-            wx.var(),               # sampers_var
-            wy.sum(),               # twitter_weight
-            wy.mean(),              # twitter_mean
-            wy.var(),               # twitter_var
-            np.cov(wx, wy)[0][1]    # covariance
+            grpkey,  # quantile
+            score,  # score
+            wx.sum(),  # sampers_weight
+            wx.mean(),  # sampers_mean
+            wx.var(),  # sampers_var
+            wy.sum(),  # twitter_weight
+            wy.mean(),  # twitter_mean
+            wy.var(),  # twitter_var
+            np.cov(wx, wy)[0][1]  # covariance
         ])
     return pd.DataFrame(
         quantile_scores,
@@ -428,3 +428,19 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     a = math.sin(dlat / 2) ** 2 + math.cos(_lat1) * math.cos(_lat2) * math.sin(dlon / 2) ** 2
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     return R * c
+
+
+def coordinates_bearing(lats1, lngs1, lats2, lngs2):
+    """
+    Calculates the bearing (degrees, 0 is north, clock-wise) elementwise.
+    :return:
+    Bearing.
+    """
+    dLons = (lngs2 - lngs1)
+    ys = np.sin(dLons) * np.cos(lats2)
+    xs = np.cos(lats1) * np.sin(lats2) - np.sin(lats1) * np.cos(lats2) * np.cos(dLons)
+    brng = np.arctan2(ys, xs)
+    brng = brng * (180 / np.pi)
+    brng = (brng + 360) % 360
+    brng = 360 - brng
+    return brng

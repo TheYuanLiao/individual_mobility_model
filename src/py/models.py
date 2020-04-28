@@ -25,7 +25,7 @@ class PreferentialReturn:
     Defaults to the true distribution observed from tweets.
     """
 
-    def __init__(self, p=None, gamma=None, region_sampling=None, jump_size_sampling=None):
+    def __init__(self, p=None, gamma=None, region_sampling=None, jump_size_sampling=None, direction_sampling=None):
         if p is None:
             raise Exception('p must be set')
         self.p = p
@@ -40,6 +40,10 @@ class PreferentialReturn:
         if region_sampling is None:
             region_sampling = RegionTrueProb()
         self.region_sampling = region_sampling
+
+        if direction_sampling is None:
+            direction_sampling = DirectionTrueProb()
+        self.direction_sampling = direction_sampling
 
         if jump_size_sampling is None:
             jump_size_sampling = JumpSizeTrueProb()
@@ -78,8 +82,8 @@ class PreferentialReturn:
         if r < self.exploration_prob:
             prev_lat, prev_lng = prev[1], prev[2]
             jump_size_m = self.jump_size_sampling.sample()
-            direction_rad = np.random.uniform(0, pi)
-            lat, lng = latlngshift(prev_lat, prev_lng, jump_size_m, direction_rad)
+            bearing = self.direction_sampling.sample()
+            lat, lng = latlngshift(prev_lat, prev_lng, jump_size_m, bearing)
             return ["point", lat, lng, -1]
         else:
             previous_region_idx = None
@@ -90,17 +94,22 @@ class PreferentialReturn:
             return ["region", region.latitude, region.longitude, region_idx]
 
 
-def latlngshift(lat, lng, delta_m, direction_rad):
+def latlngshift(lat, lng, delta_m, bearing):
     """
-    Shifts the latitude and longitude by `delta_m` meters in `direction_rad`.
-    This is not 100% accurate, but close.
+    lat,lng in degrees.
+    bearing is in degrees. North is 0. Clockwise.
     """
-    dlat = sin(direction_rad) * delta_m
-    dlng = cos(direction_rad) * delta_m
+    lat, lng = np.radians(lat), np.radians(lng)
     r_earth_m = 6371000.0
-    newlat = lat + (dlat / r_earth_m) * (180 / pi)
-    newlng = lng + (dlng / r_earth_m) * (180 / pi) / cos(lat * pi / 180)
-    return newlat, newlng
+    angular_distance = delta_m / r_earth_m
+    lat2 = np.arcsin(
+        np.sin(lat) * np.cos(angular_distance) + np.cos(lat) * np.sin(angular_distance) * np.cos(bearing)
+    )
+    lng2 = lng + np.arctan2(
+        np.sin(bearing) * np.sin(angular_distance) * np.cos(lat),
+        np.cos(angular_distance) - np.sin(lat) * np.sin(lat2)
+    )
+    return np.degrees(lat2), np.degrees(lng2)
 
 
 class RegionTrueProb:
@@ -317,6 +326,30 @@ class JumpSizeTrueProb:
         return km * 1000
 
 
+class DirectionTrueProb:
+    def __init__(self):
+        self.bearings = None
+
+    def describe(self):
+        return {
+            "name": "directionTrueProb",
+        }
+
+    def fit(self, tweets):
+        gaps = mscthesis.gaps(tweets)
+        gaps = gaps[gaps['region_origin'] != gaps['region_destination']]
+        bearings = mscthesis.coordinates_bearing(
+            gaps.latitude_origin.values,
+            gaps.longitude_origin.values,
+            gaps.latitude_destination.values,
+            gaps.longitude_destination.values,
+        )
+        self.bearings = bearings
+
+    def sample(self):
+        return np.random.choice(self.bearings)
+
+
 class Sampler:
     """
     Sampler is a convenience wrapper for sampling new trajectories for a group of users.
@@ -388,7 +421,7 @@ class Sampler:
 
                 for timeslot in range(self.daily_trips_sampling.sample()):
                     current = self.model.next(prev)
-                    samples.append([uid, day, (timeslot+1)] + current)
+                    samples.append([uid, day, (timeslot + 1)] + current)
                     prev = current
 
             n_done += 1
