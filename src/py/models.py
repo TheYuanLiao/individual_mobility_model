@@ -240,7 +240,7 @@ class RegionTransitionZipf:
         )
         self.distances = distances_km.stack()
         seed = np.exp(-self.beta * distances_km)
-        seed += 0.000001
+        seed += 0.0000001
         seed = seed / seed.sum()
         self.seed = seed
 
@@ -249,6 +249,7 @@ class RegionTransitionZipf:
             np.arange(1, region_counts.shape[0] + 1),
             -self.zipfs,
         )
+        region_probs += 0.0000001
         region_probs = pd.Series(
             region_probs / np.sum(region_probs),
             index=region_counts.index,
@@ -280,6 +281,7 @@ class RegionTransitionZipf:
         distances_km = distances_km.c
         region_probs = self.region_probabilities
         prob = region_probs * np.exp(-self.beta * distances_km)
+        prob += 0.0000001
         prob = prob / prob.sum()
         return prob
 
