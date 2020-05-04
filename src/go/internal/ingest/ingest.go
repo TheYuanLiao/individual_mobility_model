@@ -1,12 +1,12 @@
 package ingest
 
 import (
+	"archive/zip"
 	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"path/filepath"
 	"sort"
@@ -138,14 +138,39 @@ type Ingester struct {
 }
 
 func (i *Ingester) Directory(path string) error {
-	const maxFilesInMem = 50
-	const insertBatchSize = 1000
-	fs, err := filepath.Glob(filepath.Join(path, "User*.json"))
+	filePaths, err := filepath.Glob(filepath.Join(path, "User*.json"))
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Found %d files\n", len(fs))
-	fsGrouped := groupByUser(fs)
+	sources := make([]Source, len(filePaths))
+	for i, fp := range filePaths {
+		sources[i] = &FileSource{
+			absolutePath: fp,
+		}
+	}
+	return i.process(sources)
+}
+
+func (i *Ingester) Zip(path string) error {
+	r, err := zip.OpenReader(path)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+	sources := make([]Source, len(r.File))
+	for i, f := range r.File {
+		sources[i] = &ZipSource{
+			f: f,
+		}
+	}
+	return i.process(sources)
+}
+
+func (i *Ingester) process(sources []Source) error {
+	const maxFilesInMem = 50
+	const insertBatchSize = 1000
+	fmt.Printf("Processing %d files\n", len(sources))
+	fsGrouped := groupByUser(sources)
 	fmt.Printf("Found unique %d users\n", len(fsGrouped))
 	bytesChan := make(chan []byte, maxFilesInMem)
 	userChan := make(chan *User, insertBatchSize)
@@ -227,20 +252,16 @@ func (i *Ingester) Directory(path string) error {
 		}
 	}()
 	// Start processing all files
-	for _, ps := range fsGrouped {
+	for _, srcs := range fsGrouped {
 		var bs []byte
-		for _, p := range ps {
-			b, err := ioutil.ReadFile(p)
+		for _, src := range srcs {
+			b, err := src.ReadAll()
 			if err != nil {
 				return err
 			}
 			bs = append(bs, b...)
 		}
 		if len(bs) == 0 {
-			bases := make([]string, len(ps))
-			for i, p := range ps {
-				bases[i] = filepath.Base(p)
-			}
 			continue
 		}
 		bytesChan <- bs
@@ -256,19 +277,19 @@ func (i *Ingester) Directory(path string) error {
 	return nil
 }
 
-func groupByUser(filePaths []string) [][]string {
+func groupByUser(sources []Source) [][]Source {
 	// from userId to filepaths for this user
-	groups := make(map[string][]string)
-	for _, f := range filePaths {
+	groups := make(map[string][]Source)
+	for _, src := range sources {
 		// Filenames are on the form "UserID_[user-id]_[time-period].json
 		// Ex: UserID_6913_20171122-233133.json
-		parts := strings.Split(filepath.Base(f), "_")
+		parts := strings.Split(src.Name(), "_")
 		userID := parts[1]
-		groups[userID] = append(groups[userID], f)
+		groups[userID] = append(groups[userID], src)
 	}
-	var grouped [][]string
-	for _, files := range groups {
-		grouped = append(grouped, files)
+	var grouped [][]Source
+	for _, src := range groups {
+		grouped = append(grouped, src)
 	}
 	return grouped
 }
