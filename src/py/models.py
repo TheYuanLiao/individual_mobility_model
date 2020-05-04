@@ -171,35 +171,65 @@ class RegionZipfProb:
 
 
 class GroupRegionZipfProb:
-    """
-    A region probability sampler that preserves the "rank" of observed regions, but
-    with probabilities sampled from a zipfian distribution.
-
-    :param s
-    Parameter S of the Zipf distribution
-    """
-
-    def __init__(self, s=1.2):
-        self.s = s
-        self.region_probs = None
+    def __init__(self, zipf=1.2):
+        self.zipf = zipf
+        self.group_probs = None
+        self.region_by_group_probs = None
+        self.regions = None
 
     def describe(self):
         return {
-            "name": "zipf",
-            "s": self.s
+            "name": "GroupRegionZipfProb",
+            "zipf": self.zipf
         }
 
     def fit(self, tweets):
-        visits = tweets.groupby('region').size().sort_values(ascending=False)
-        probs = np.power(np.arange(1, visits.shape[0] + 1), -self.s)
-        self.region_probs = pd.Series(probs / np.sum(probs), index=visits.index)
+        regions = tweets.reset_index().groupby('region').head(1).set_index('region').sort_index()
+        self.regions = regions
+        gaps = mscthesis.visit_gaps(tweets)
+        t = gaps.groupby(['group_origin', 'group_destination']).size()
+        for g in list(set(t.index.get_level_values(1)) - set(t.index.get_level_values(0))):
+            t.loc[(g, g)] = 1
+        transitions = t.unstack(fill_value=0)
+        group_probs = transitions.div(
+            transitions.sum(axis=1),  # summation of each row
+            axis=0,
+        )
+        self.group_probs = group_probs
+        region_by_group_probs = tweets.groupby(['group', 'region']).size().sort_values(ascending=False)
+        probs = np.power(np.arange(1, region_by_group_probs.shape[0] + 1), -self.zipf)
+        probs = pd.Series(probs / np.sum(probs), index=region_by_group_probs.index).unstack().fillna(0)
+        self.region_by_group_probs = probs.div(
+            probs.sum(axis=1),  # summation of each row
+            axis=0,
+        )
 
-    def sample(self, previous_region_idx=None):
-        return np.random.choice(
-            a=self.region_probs.index,
-            p=self.region_probs.values,
+    def sample(self, previous_region_idx=None, previous_point=None):
+        if previous_region_idx is None:
+            distances_km = pd.DataFrame(
+                (6371.0088 * haversine_distances(
+                    np.radians(self.regions[['latitude', 'longitude']]),
+                    Y=np.radians([[previous_point[1], previous_point[2]]]),
+                )),
+                index=self.regions.index,
+                columns=["c"],
+            )
+            prev_group = self.regions.loc[distances_km['c'].idxmin()]['group']
+        else:
+            prev_group = self.regions.loc[previous_region_idx]['group']
+        g_probs = self.group_probs.loc[prev_group]
+        next_group = np.random.choice(
+            a=g_probs.index,
+            p=g_probs.values,
             size=1,
         )[0]
+        r_probs = self.region_by_group_probs.loc[next_group]
+        return np.random.choice(
+            a=r_probs.index,
+            p=r_probs.values,
+            size=1,
+        )[0]
+
 
 
 class RegionTransitionZipf:
