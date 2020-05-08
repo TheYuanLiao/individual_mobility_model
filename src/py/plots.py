@@ -176,8 +176,8 @@ def plot_dist_distribution(dms, scale):
     return fig, axes
 
 
-def generic_plot_dist_distribution(ax, distance_sums=[], titles=[]):
-    ax.set_title("Trip distance distribution")
+def generic_plot_dist_distribution(ax, distance_sums=[], titles=[], ticks=None, yscale='log'):
+    #ax.set_title("Trip distance distribution")
 
     for d in distance_sums:
         ax.plot(d.index.right, d.values, zorder=2)
@@ -186,8 +186,11 @@ def generic_plot_dist_distribution(ax, distance_sums=[], titles=[]):
         ax.axvline(x, color='black', linewidth=0.25, zorder=1)
     ax.axvline(distance_sums[0].index.right[-1], color='black', linewidth=0.25, zorder=1)
     ax.set_xscale('log')
-    ax.set_yscale('log')
+    ax.set_yscale(yscale)
     ax.set_ylabel('Percentage of trips')
-    ax.set_xlabel('Distance')
+    ax.set_xlabel('Distance (km)')
     ax.legend(labels=titles)
+    if ticks is not None:
+        ax.set_xticks(ticks)
+        ax.get_xaxis().set_major_formatter(mpl.ticker.ScalarFormatter())
 
