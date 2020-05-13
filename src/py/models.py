@@ -271,7 +271,7 @@ class RegionTransitionZipf:
         self.distances = distances_km.stack()
         seed = np.exp(-self.beta * distances_km)
         seed += 0.0000001
-        seed = seed / seed.sum()
+        seed = seed.div(seed.sum(axis=1), axis=0)
         self.seed = seed
 
         region_counts = reggrp.size().sort_values(ascending=False)
@@ -285,18 +285,9 @@ class RegionTransitionZipf:
             index=region_counts.index,
         ).sort_index()
         self.region_probabilities = region_probs
-        fitted = validation.ipf(seed.values, region_probs.values, region_probs.values, tolerance=1e-5)
-        transition_mx = pd.DataFrame(
-            fitted,
-            index=regions.index,
-            columns=regions.index,
-        )
-        # Normalize row (each row should sum to 1)
-        transition_mx = transition_mx.div(
-            transition_mx.sum(axis=1),  # summation of each row
-            axis=0,
-        )
-        self.transition_mx = transition_mx.stack()
+        fitted = region_probs * seed
+        fitted = fitted.div(fitted.sum(axis=1), axis=0)
+        self.transition_mx = fitted.stack()
 
     def probs_from_point(self, prev):
         regions = self.regions
