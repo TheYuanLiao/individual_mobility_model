@@ -4,6 +4,9 @@ import pandas as pd
 
 metric_epsg = "EPSG:28992"
 
+counties = gpd.read_file('../../dbs/netherlands/provinces.shp').to_crs(metric_epsg)
+municipalities = gpd.read_file('../../dbs/netherlands/gem_2017.shp').to_crs(metric_epsg)
+
 def zones():
     _zones = gpd.read_file('./../../dbs/netherlands/mobility_data/CBS_PC4_2017_v1.shp')
     _zones = _zones.rename(columns={"PC4": "zone"})[['zone', 'geometry']]
