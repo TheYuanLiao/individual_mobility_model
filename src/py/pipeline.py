@@ -60,9 +60,9 @@ class Pipeline:
         home_locations = pd.read_csv(cfg.home_locations_path).set_index('userid')
         home_locations = gpd.GeoDataFrame(
             home_locations,
-            crs="EPSG:3006",
-            geometry=gpd.points_from_xy(home_locations.x, home_locations.y),
-        )
+            crs="EPSG:4326",
+            geometry=gpd.points_from_xy(home_locations.latitude, home_locations.longitude),
+        ).to_crs("EPSG:3006")
         visits = cfg.visit_factory.visits()
         self.visits = visits
         converted_visits = self.sampers.convert(visits)

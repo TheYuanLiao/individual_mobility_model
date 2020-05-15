@@ -52,7 +52,7 @@ def align_populations_aus_sao(alignment_regions, twitter):
 
 
 def plot_geo_rep(counties, municipalities, ticks1=None, ticks2=None):
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 10))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 13))
     ax1.set_axis_off()
     ax2.set_axis_off()
     plot_cfg = {
