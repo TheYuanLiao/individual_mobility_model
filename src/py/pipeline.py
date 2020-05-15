@@ -61,7 +61,7 @@ class Pipeline:
         home_locations = gpd.GeoDataFrame(
             home_locations,
             crs="EPSG:4326",
-            geometry=gpd.points_from_xy(home_locations.latitude, home_locations.longitude),
+            geometry=gpd.points_from_xy(home_locations.longitude, home_locations.latitude),
         ).to_crs("EPSG:3006")
         visits = cfg.visit_factory.visits()
         self.visits = visits
