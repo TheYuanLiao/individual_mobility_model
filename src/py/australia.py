@@ -17,6 +17,13 @@ def validation_zones():
     return zones
 
 
+def zone_populations():
+    pop = pd.read_excel("./../../dbs/australia/data_by_sa3.xlsx", sheet_name=1).rename(columns={"SA3_ID": "zone", "WEIGHTED_POPULATION": "census_population"})
+    pop = pop[pop['WAVE'] == '2018/19']
+    pop_sa3 = pop.set_index('zone').census_population
+    return validation_zones().set_index('zone').join(pop_sa3)
+
+
 def validation_boundary():
     return validation_zones().assign(a=1).dissolve(by='a').simplify(tolerance=0.2).to_crs("EPSG:4326")
 
