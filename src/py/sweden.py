@@ -1,6 +1,8 @@
 import geopandas as gpd
 
 
+metric_epsg = "EPSG:3035"
+
 def counties():
     return gpd.read_file('../../dbs/alla_lan/alla_lan.shp')
 
