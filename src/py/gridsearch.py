@@ -11,22 +11,35 @@ import pipeline
 
 results_dir = "./../../results"
 
+ps = [0.3] #0.2
+betas = [0.03, 0.04, 0.05]
+gammas = [0.75, 0.8, 0.85]
+
+visit_factories = []
+for beta in betas:
+    for p in ps:
+        for gamma in gammas:
+            visit_factories.append(
+                models.Sampler(
+                    model=models.PreferentialReturn(
+                        p=p,
+                        gamma=gamma,
+                        region_sampling=models.RegionTransitionZipf(beta=beta, zipfs=1.2),
+                        jump_size_sampling=models.JumpSizeTrueProb(),
+                    ),
+                    n_days=7 * 20,
+                    daily_trips_sampling=models.NormalDistribution(mean=3.14, std=1.8),
+                    geotweets_path="./../../dbs/sweden/geotweets.csv",
+                )
+            )
+
+for f in visit_factories:
+    print(f.describe())
+
+
 if __name__ == "__main__":
     cfgs = pipeline.config_product(
-        visit_factories=[
-            models.Sampler(
-                model=models.PreferentialReturn(
-                    p=0.2,
-                    gamma=0.8,
-                    region_sampling=models.RegionTransitionZipf(beta=0.05, zipfs=1.2),
-                    jump_size_sampling=models.JumpSizeTrueProb(),
-                ),
-                n_days=7 * 30,
-                daily_trips_sampling=models.NormalDistribution(mean=3.14, std=1.8),
-                geotweets_path="./../../dbs/sweden/geotweets.csv",
-            ),  # Model
-            # models.VisitsFromFile("./../../dbs/sweden/visits-zipf1.5.csv"),
-        ],
+        visit_factories=visit_factories,
         home_locations_paths=[
             "./../../dbs/sweden/homelocations.csv",
         ],
