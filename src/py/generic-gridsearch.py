@@ -25,9 +25,9 @@ only_weekday = True
 # Only run baseline, and not grid search
 only_run_baseline = False
 
-ps = [0.2, 0.3, 0.4]
-betas = [0.03, 0.04, 0.05]
-gammas = [0.75, 0.8, 0.85]
+ps = [0.3, 0.6, 0.9]
+gammas = [0.2, 0.5, 0.8]
+betas = [0.01, 0.04, 0.07]
 
 visit_factories = []
 for beta in betas:
