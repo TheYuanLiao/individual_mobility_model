@@ -79,8 +79,6 @@ if __name__ == "__main__":
     # Ensure the tweets are sorted chronologically
     geotweets = geotweets.sort_values(by=['userid', 'createdat'])
 
-    geotweets = geotweets.loc[geotweets.groupby('userid').size()[:10].index]
-
     if only_run_baseline:
         print("Calculating baseline results...")
         baseline = models.geotweets_to_visits(geotweets)
