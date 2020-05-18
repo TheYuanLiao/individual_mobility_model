@@ -46,7 +46,7 @@ def crs_convert_visits(visits, zones):
 
 
 def align_visits_to_zones(visits, zones):
-    print("Aligning region-visits to Sampers zones...")
+    print("Aligning region-visits to zones...")
     regional_visits = visits[visits.kind == 'region']
     n_regional_visits_before = regional_visits.shape[0]
     user_regions = regional_visits.groupby(['userid', 'region']).head(1)
@@ -54,7 +54,7 @@ def align_visits_to_zones(visits, zones):
     regional_visits = user_zones.merge(regional_visits, on=['userid', 'region'])
     print("removed", n_regional_visits_before - regional_visits.shape[0], "region-visits due to missing zone geom")
 
-    print("Aligning point-visits to Sampers zones...")
+    print("Aligning point-visits to zones...")
     point_visits = visits[visits.kind == 'point']
     if point_visits.shape[0] > 0:
         n_point_visits_before = point_visits.shape[0]
