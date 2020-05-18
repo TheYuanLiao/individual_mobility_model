@@ -137,16 +137,14 @@ def plot_dist_distribution(dms, scale):
     mpl.rcParams['font.size'] = 20.0
     fig, axes = plt.subplots(2, 1, figsize=(20, 13), sharex=True)
     axes[0].set_title(scale.title())
-    dms.loc[scale]['model_sum'].unstack(level=0).plot(
+    dms.loc[scale]['model_sum'].unstack(level=0).cumsum().plot(
         ax=axes[0],
         rot=90,
-        logy=True,
         xticks=[],
     )
-    dms.loc[scale]['sampers_sum'].loc['Model'].plot(
+    dms.loc[scale]['sampers_sum'].loc['Baseline'].cumsum().plot(
         ax=axes[0],
         rot=90,
-        logy=True,
         xticks=[],
         label='Sampers'
     )
@@ -157,13 +155,13 @@ def plot_dist_distribution(dms, scale):
 
     n = dms.loc[scale]
     sq_err = np.square(np.subtract(n['sampers_sum'], n['model_sum']))
-    print('Model MSE: {:.5e}'.format(sq_err.loc['Model'].mean()))
     print('Baseline MSE: {:.5e}'.format(sq_err.loc['Baseline'].mean()))
-    sq_err.unstack(level=0).plot(
+    print('20200517_231255 MSE: {:.5e}'.format(sq_err.loc['20200517_231255'].mean()))
+    print('Model MSE: {:.5e}'.format(sq_err.loc['Model'].mean()))
+    sq_err.unstack(level=0).cumsum().plot(
         ax=axes[1],
         rot=90,
         xticks=[],
-        logy=True
     )
     axes[1].set_ylabel('Squared Error')
     axes[1].set_xlabel('Distance')
