@@ -1,12 +1,12 @@
 {
   "visits": {
     "model": {
-      "p": 0.4,
-      "gamma": 0.75,
+      "p": 0.2,
+      "gamma": 0.8,
       "region_sampling": {
         "name": "transitionZipf",
         "zipfs": 1.2,
-        "beta": 0.03
+        "beta": 0.05
       },
       "jump_size_sampling": {
         "name": "trueProb"

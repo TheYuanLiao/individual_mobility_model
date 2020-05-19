@@ -149,21 +149,20 @@ def plot_dist_distribution(dms, scale):
         label='Sampers'
     )
     axes[0].set_xlabel('Distance')
-    axes[0].set_ylabel('Percentage of trips')
+    axes[0].set_ylabel('Cumulative percentage of trips')
     handles, labels = axes[0].get_legend_handles_labels()
     axes[0].get_legend().remove()
 
     n = dms.loc[scale]
     sq_err = np.square(np.subtract(n['sampers_sum'], n['model_sum']))
     print('Baseline MSE: {:.5e}'.format(sq_err.loc['Baseline'].mean()))
-    print('20200517_231255 MSE: {:.5e}'.format(sq_err.loc['20200517_231255'].mean()))
     print('Model MSE: {:.5e}'.format(sq_err.loc['Model'].mean()))
     sq_err.unstack(level=0).cumsum().plot(
         ax=axes[1],
         rot=90,
         xticks=[],
     )
-    axes[1].set_ylabel('Squared Error')
+    axes[1].set_ylabel('Cumulative squared error')
     axes[1].set_xlabel('Distance')
     axes[1].get_legend().remove()
     axes[0].xaxis.set_tick_params(labelbottom=False)
