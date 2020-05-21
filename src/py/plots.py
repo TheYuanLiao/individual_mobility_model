@@ -177,14 +177,14 @@ def generic_plot_dist_distribution(ax, distance_sums=[], titles=[], ticks=None, 
     #ax.set_title("Trip distance distribution")
 
     for d in distance_sums:
-        ax.plot(d.index.right, d.values, zorder=2)
+        ax.plot(d.index.right, np.cumsum(d.values), zorder=2)
 
     for x in distance_sums[0].index.left:
-        ax.axvline(x, color='black', linewidth=0.25, zorder=1)
+        ax.axvline(x, color=(0.5, 0.5, 0.5, 0.5), linewidth=1, zorder=1)
     ax.axvline(distance_sums[0].index.right[-1], color='black', linewidth=0.25, zorder=1)
     ax.set_xscale('log')
     ax.set_yscale(yscale)
-    ax.set_ylabel('Percentage of trips')
+    ax.set_ylabel('Cumulative percentage of trips')
     ax.set_xlabel('Distance (km)')
     ax.legend(labels=titles)
     if ticks is not None:
