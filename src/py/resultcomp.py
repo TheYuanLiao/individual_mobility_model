@@ -143,10 +143,12 @@ def plot_distance_metrics(dms):
             ).legend(bbox_to_anchor=(1, 1))
     return fig
 
-def results_mse(directories=None, start=None, end=None):
+def results_mse(directories=None, start=None, end=None, include_model=False):
     if directories is None:
         result_directories = sorted(os.listdir(results_dir))
         directories = string_range(result_directories, start, end)
+        if include_model == True:
+            directories.append('model')
     df = pd.DataFrame(columns=['scale', 'directory', 'p', 'gamma', 'beta', 'mse'])
     dms = read_distance_metrics(directories=directories)
     dms = dms[dms['sampers_mean'] != 0.0]
