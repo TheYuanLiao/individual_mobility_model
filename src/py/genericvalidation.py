@@ -64,9 +64,14 @@ def align_visits_to_zones(visits, zones):
         point_visits = point_visits.assign(zone='0')
 
     # Recombine
+    columns = ['day', 'timeslot', 'zone']
+    # Special handling of created at in order to have baseline and baseline 24h time threshold.
+    if 'createdat' in visits:
+        columns.append('createdat')
+
     visits = pd.concat([
-        regional_visits[['day', 'timeslot', 'zone']],
-        point_visits[['day', 'timeslot', 'zone']]
+        regional_visits[columns],
+        point_visits[columns]
     ])
     print(visits.shape[0], "visits left after alignment")
     # Re-sort to chronological order
@@ -77,17 +82,36 @@ def align_visits_to_zones(visits, zones):
     return visits
 
 
-def aligned_visits_to_odm(visits, multiindex):
+def aligned_visits_to_odm(visits, multiindex, timethreshold_hours=None):
     print("Creating odm...")
-    sparse_odm = mscthesis.visit_gaps(visits[['zone']]) \
+    gaps_columns = ['zone']
+
+    if "createdat" in visits:
+        gaps_columns.append("createdat")
+
+    gaps = mscthesis.visit_gaps(visits[gaps_columns])
+    if timethreshold_hours is not None:
+        print("Applying timethreshold to gaps [{} hours]...".format(timethreshold_hours))
+        gaps = gaps.assign(duration=gaps.createdat_destination - gaps.createdat_origin)
+        gaps = gaps[gaps.duration < pd.Timedelta(timethreshold_hours, "hours")]
+
+    gaps = gaps[['zone_origin', 'zone_destination']]
+    sparse_odm = gaps \
         .groupby(['zone_origin', 'zone_destination']).size() \
         .reindex(multiindex, fill_value=0.0)
     sparse_odm = sparse_odm / sparse_odm.sum()
     return sparse_odm
 
 
-def visits_to_odm(visits, zones):
+def visits_to_odm(visits, zones, timethreshold_hours=None):
     crs_visits = crs_convert_visits(visits, zones)
     aligned_visits = align_visits_to_zones(crs_visits, zones)
-    odm = aligned_visits_to_odm(aligned_visits, pd.MultiIndex.from_product([zones.zone.tolist(), zones.zone.tolist()]))
+    odm = aligned_visits_to_odm(
+        aligned_visits,
+        pd.MultiIndex.from_product([
+            zones.zone.tolist(),
+            zones.zone.tolist(),
+        ]),
+        timethreshold_hours,
+    )
     return odm

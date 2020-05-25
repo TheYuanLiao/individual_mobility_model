@@ -564,5 +564,6 @@ def geotweets_to_visits(geotweets):
         'timeslot',
         'kind',
         'label',
+        'createdat',
     ]]
     return v
