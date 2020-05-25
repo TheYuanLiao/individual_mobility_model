@@ -1,4 +1,5 @@
 from matplotlib.ticker import ScalarFormatter
+from matplotlib.patches import Patch
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import pandas as pd
@@ -61,6 +62,12 @@ def plot_geo_rep(counties, municipalities, ticks1=None, ticks2=None):
         "edgecolor": "black",
         "linewidth": 0.1,
         "cmap": "bwr",
+        "missing_kwds": {
+            "color": "lightgrey",
+            "edgecolor": "black",
+            "label": "0 or 1 Twitter user"
+        },
+        "label": '>1 Twitter user'
     }
     legend_kwds = {
         "orientation": "horizontal",
@@ -86,6 +93,12 @@ def plot_geo_rep(counties, municipalities, ticks1=None, ticks2=None):
         **plot_cfg,
         legend_kwds=dict(**legend_kwds, ticks=ticks2)
     )
+    ax2.legend(handles=[
+            Patch(facecolor='lightgrey', edgecolor='black', label='0 or 1 Twitter user')
+        ],
+        fontsize='10',
+        loc='upper left'
+    )
     ax2.text(.05, .8, "B", transform=ax2.transAxes, fontsize='25')
 
 
@@ -100,6 +113,11 @@ def plot_geo_rep_aus_sao(study_zone):
         "edgecolor": "black",
         "linewidth": 0.1,
         "cmap": "bwr",
+        "missing_kwds": {
+            "color": "lightgrey",
+            "edgecolor": "black",
+            "label": "Missing"
+        }
     }
     legend_kwds = {
         "orientation": "horizontal",
@@ -107,17 +125,25 @@ def plot_geo_rep_aus_sao(study_zone):
         "shrink": 1.,
         "format": mpl.ticker.PercentFormatter(xmax=1.),
     }
-
     study_zone.plot(
         ax=ax,
         norm=mpl.colors.DivergingNorm(vmin=0., vcenter=1., vmax=np.max(study_zone.perc_of_census)),
         **plot_cfg,
         legend_kwds=dict(**legend_kwds)
     )
+    ax.legend(handles=[
+        Patch(facecolor='lightgrey', edgecolor='black', label='0 or 1 Twitter user')
+    ],
+        fontsize='25',
+        loc='lower right'
+    )
 
 
 def plot_corr(counties, municipalities):
     fig, axes = plt.subplots(1, 2, figsize=(18, 8.5))
+
+    muni_small = municipalities[municipalities['twitter'] < 2.0]
+    muni_rest = municipalities[municipalities['twitter'] >= 2.0]
 
     scatter_style = {
         "kind": "line",
@@ -129,15 +155,34 @@ def plot_corr(counties, municipalities):
         "linestyle": "None",
         "legend": False,
     }
+
+    scatter_style2 = {
+        "kind": "line",
+        "x": "census_perc",
+        "y": "twitter_perc",
+        "loglog": True,
+        "marker": "x",
+        "markersize": 3,
+        "linestyle": "None",
+        "legend": False,
+        "color": 'red',
+    }
     pd.DataFrame(counties).plot(
         ax=axes[0],
         **scatter_style,
     )
 
-    pd.DataFrame(municipalities).plot(
+    pd.DataFrame(muni_rest).plot(
         ax=axes[1],
         **scatter_style,
+        label='>1 Twitter user'
     )
+    pd.DataFrame(muni_small).plot(
+        ax=axes[1],
+        **scatter_style2,
+        label='0 or 1 Twitter user',
+    )
+    axes[1].legend(loc='lower right')
     for ax in axes:
         for axis in [ax.xaxis, ax.yaxis]:
             axis.set_major_formatter(ScalarFormatter())
@@ -153,6 +198,9 @@ def plot_corr(counties, municipalities):
 def plot_corr_aus_sao(study_zone):
     fig, ax = plt.subplots(1, 1, figsize=(8.5, 8.5))
 
+    zone_small = study_zone[study_zone['twitter'] < 2.0]
+    zone_rest = study_zone[study_zone['twitter'] >= 2.0]
+
     scatter_style = {
         "kind": "line",
         "x": "census_perc",
@@ -163,10 +211,28 @@ def plot_corr_aus_sao(study_zone):
         "linestyle": "None",
         "legend": False,
     }
-    pd.DataFrame(study_zone).plot(
+    scatter_style2 = {
+        "kind": "line",
+        "x": "census_perc",
+        "y": "twitter_perc",
+        "loglog": True,
+        "marker": "x",
+        "markersize": 3,
+        "linestyle": "None",
+        "legend": False,
+        "color": 'red',
+    }
+    pd.DataFrame(zone_rest).plot(
         ax=ax,
         **scatter_style,
+        label='>1 Twitter user'
     )
+    pd.DataFrame(zone_small).plot(
+        ax=ax,
+        **scatter_style2,
+        label='0 or 1 Twitter user',
+    )
+    ax.legend(loc='lower right', fontsize='15')
     ax.plot([0, 0.5], [0, 0.5], color='black', linewidth=0.25)
     ax.set_xlabel('Census percentage of population', fontsize=20)
     ax.set_ylabel('Twitter percentage of population', fontsize=20)
