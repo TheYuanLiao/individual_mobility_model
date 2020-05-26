@@ -1,6 +1,7 @@
 from matplotlib.ticker import ScalarFormatter
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from  matplotlib.colors import LogNorm
 import pandas as pd
 import geopandas as gpd
 import numpy as np
@@ -61,6 +62,9 @@ def plot_geo_rep(counties, municipalities, ticks1=None, ticks2=None):
         "edgecolor": "black",
         "linewidth": 0.1,
         "cmap": "bwr",
+        "missing_kwds": {
+            "color": "lightgrey",
+        }
     }
     legend_kwds = {
         "orientation": "horizontal",
@@ -73,7 +77,7 @@ def plot_geo_rep(counties, municipalities, ticks1=None, ticks2=None):
     counties_limit = np.max(counties.perc_of_census)
     counties.plot(
         ax=ax1,
-        norm=mpl.colors.DivergingNorm(vmin=0., vcenter=1., vmax=counties_limit),
+        norm=MidPointLogNorm(vmin=0.01, midpoint=1., vmax=counties_limit),
         **plot_cfg,
         legend_kwds=dict(**legend_kwds, ticks=ticks1)
     )
@@ -82,11 +86,21 @@ def plot_geo_rep(counties, municipalities, ticks1=None, ticks2=None):
     municipalities_limit = np.max(municipalities.perc_of_census)
     municipalities.plot(
         ax=ax2,
-        norm=mpl.colors.DivergingNorm(vmin=0, vcenter=1., vmax=municipalities_limit),
+        norm=MidPointLogNorm(vmin=0.1, midpoint=1., vmax=municipalities_limit),
         **plot_cfg,
         legend_kwds=dict(**legend_kwds, ticks=ticks2)
     )
+    p = mpl.patches.Patch(color='lightgrey', label='0 or 1 Twitter user')
+    ax2.legend(handles=[p], loc='upper center', fontsize='10')
     ax2.text(.05, .8, "B", transform=ax2.transAxes, fontsize='25')
+
+class MidPointLogNorm(LogNorm):
+    def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
+        LogNorm.__init__(self,vmin=vmin, vmax=vmax, clip=clip)
+        self.midpoint=midpoint
+    def __call__(self, value, clip=None):
+        x, y = [np.log(self.vmin), np.log(self.midpoint), np.log(self.vmax)], [0, 0.5, 1]
+        return np.ma.masked_array(np.interp(np.log(value), x, y))
 
 
 def plot_geo_rep_aus_sao(study_zone):
@@ -100,6 +114,9 @@ def plot_geo_rep_aus_sao(study_zone):
         "edgecolor": "black",
         "linewidth": 0.1,
         "cmap": "bwr",
+        "missing_kwds": {
+            "color": "lightgrey",
+        }
     }
     legend_kwds = {
         "orientation": "horizontal",
@@ -110,10 +127,12 @@ def plot_geo_rep_aus_sao(study_zone):
 
     study_zone.plot(
         ax=ax,
-        norm=mpl.colors.DivergingNorm(vmin=0., vcenter=1., vmax=np.max(study_zone.perc_of_census)),
+        norm=MidPointLogNorm(vmin=0.01, midpoint=1., vmax=10),
         **plot_cfg,
         legend_kwds=dict(**legend_kwds)
     )
+    p = mpl.patches.Patch(color='lightgrey', label='0 or 1 Twitter user')
+    ax.legend(handles=[p], loc='lower right', fontsize='20')
 
 
 def plot_corr(counties, municipalities):

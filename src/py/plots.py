@@ -1,6 +1,7 @@
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.ticker import StrMethodFormatter
 
 
 def plot_odms(odms=None, titles=None):
@@ -191,3 +192,38 @@ def generic_plot_dist_distribution(ax, distance_sums=[], titles=[], ticks=None, 
         ax.set_xticks(ticks)
         ax.get_xaxis().set_major_formatter(mpl.ticker.ScalarFormatter())
 
+
+
+def generic_plot_gridsearch(df, fix_beta=0.04, lines=[]):
+    mpl.rcParams['font.size'] = 18.0
+    exploration_plot_data = df[df.beta == fix_beta]
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 8))
+    ax1.set_xticks([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.])
+    ax1.set_yticks([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.])
+    ax1.set_xlim((0.15, 1.05))
+    ax1.set_ylim((0.05, 0.95))
+    s = ax1.scatter(
+        exploration_plot_data.p,
+        exploration_plot_data.gamma,
+        c=exploration_plot_data.mse,
+        s=500,
+        zorder=2
+    )
+    ax1.set_xlabel(r'$\rho$')
+    ax1.set_ylabel(r'$\gamma$')
+    ax1.grid(True)
+    ax1.text(.5, 1.02, "A", transform=ax1.transAxes, fontsize='25')
+    cbaxes = fig.add_axes([-0.01, 0.1, 0.03, 0.8])
+    cbar = fig.colorbar(s, ax=ax1, format='%.1e', cax=cbaxes)
+    cbar.ax.set_ylabel('MSE', rotation=90)
+    cbar.ax.yaxis.set_label_position('left')
+
+    for (p, gamma) in lines:
+        beta_plot_data = df[(df.p == p) & (df.gamma == gamma)].sort_values(by='beta')
+        ax2.plot(beta_plot_data.beta, beta_plot_data.mse, label=r'$\rho$={}, $\gamma$={}'.format(p, gamma))
+    ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+    ax2.grid(True)
+    ax2.legend(loc='upper center')
+    ax2.set_xlabel(r'$\beta$')
+    ax2.set_ylabel('MSE')
+    ax2.text(.5, 1.02, "B", transform=ax2.transAxes, fontsize='25')
