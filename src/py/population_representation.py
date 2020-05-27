@@ -1,10 +1,7 @@
 from matplotlib.ticker import ScalarFormatter
 import matplotlib.pyplot as plt
-import matplotlib as mpl
-from  matplotlib.colors import LogNorm
 import pandas as pd
 import geopandas as gpd
-import numpy as np
 
 
 def twitter_home_locations(region):
@@ -25,114 +22,31 @@ def plot_home_locations(census_zones, twitter_homes):
 
 def align_populations(alignment_regions, twitter, census):
     a = alignment_regions.assign(
-        twitter = gpd.sjoin(alignment_regions, twitter, how="inner", op='intersects').groupby('ID').size(),
-        census = gpd.sjoin(alignment_regions, census, how="inner", op='intersects').groupby('ID').sum().population,
+        twitter=gpd.sjoin(alignment_regions, twitter, how="inner", op='intersects').groupby('ID').size(),
+        census=gpd.sjoin(alignment_regions, census, how="inner", op='intersects').groupby('ID').sum().population,
     )
     # Some regions might not have recorded population
     a = a.fillna(0)
     a = a.assign(
-        twitter_perc = a.twitter / a.twitter.sum(),
-        census_perc = a.census / a.census.sum(),
+        twitter_perc=a.twitter / a.twitter.sum(),
+        census_perc=a.census / a.census.sum(),
     )
-    a = a.assign(perc_of_census = a.twitter_perc / a.census_perc)
+    a = a.assign(perc_of_census=a.twitter_perc / a.census_perc)
     return a
 
 
 def align_populations_aus_sao(alignment_regions, twitter):
     a = alignment_regions.assign(
-        twitter = gpd.sjoin(alignment_regions, twitter, how="inner", op='intersects').groupby('zone').size(),
+        twitter=gpd.sjoin(alignment_regions, twitter, how="inner", op='intersects').groupby('zone').size(),
     )
     # Some regions might not have recorded population
     a = a.fillna(0)
     a = a.assign(
-        twitter_perc = a.twitter / a.twitter.sum(),
-        census_perc = a.census_population / a.census_population.sum(),
+        twitter_perc=a.twitter / a.twitter.sum(),
+        census_perc=a.census_population / a.census_population.sum(),
     )
-    a = a.assign(perc_of_census = a.twitter_perc / a.census_perc)
+    a = a.assign(perc_of_census=a.twitter_perc / a.census_perc)
     return a
-
-
-def plot_geo_rep(counties, municipalities, ticks1=None, ticks2=None):
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 13))
-    ax1.set_axis_off()
-    ax2.set_axis_off()
-    plot_cfg = {
-        "column": "perc_of_census",
-        "legend": True,
-        "edgecolor": "black",
-        "linewidth": 0.1,
-        "cmap": "bwr",
-        "missing_kwds": {
-            "color": "lightgrey",
-        }
-    }
-    legend_kwds = {
-        "orientation": "horizontal",
-        "fraction": 0.5,
-        "pad": 0.01,
-        "shrink": 1.,
-        "format": mpl.ticker.PercentFormatter(xmax=1.),
-    }
-
-    counties_limit = np.max(counties.perc_of_census)
-    counties.plot(
-        ax=ax1,
-        norm=MidPointLogNorm(vmin=0.01, midpoint=1., vmax=counties_limit),
-        **plot_cfg,
-        legend_kwds=dict(**legend_kwds, ticks=ticks1)
-    )
-    ax1.text(.05, .8, "A", transform=ax1.transAxes, fontsize='25')
-
-    municipalities_limit = np.max(municipalities.perc_of_census)
-    municipalities.plot(
-        ax=ax2,
-        norm=MidPointLogNorm(vmin=0.1, midpoint=1., vmax=municipalities_limit),
-        **plot_cfg,
-        legend_kwds=dict(**legend_kwds, ticks=ticks2)
-    )
-    p = mpl.patches.Patch(color='lightgrey', label='0 or 1 Twitter user')
-    ax2.legend(handles=[p], loc='upper center', fontsize='10')
-    ax2.text(.05, .8, "B", transform=ax2.transAxes, fontsize='25')
-
-class MidPointLogNorm(LogNorm):
-    def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
-        LogNorm.__init__(self,vmin=vmin, vmax=vmax, clip=clip)
-        self.midpoint=midpoint
-    def __call__(self, value, clip=None):
-        x, y = [np.log(self.vmin), np.log(self.midpoint), np.log(self.vmax)], [0, 0.5, 1]
-        return np.ma.masked_array(np.interp(np.log(value), x, y))
-
-
-def plot_geo_rep_aus_sao(study_zone):
-    mpl.rcParams['font.size'] = 18.0
-
-    fig, ax = plt.subplots(1, 1, figsize=(20, 13))
-    ax.set_axis_off()
-    plot_cfg = {
-        "column": "perc_of_census",
-        "legend": True,
-        "edgecolor": "black",
-        "linewidth": 0.1,
-        "cmap": "bwr",
-        "missing_kwds": {
-            "color": "lightgrey",
-        }
-    }
-    legend_kwds = {
-        "orientation": "horizontal",
-        "pad": 0.01,
-        "shrink": 1.,
-        "format": mpl.ticker.PercentFormatter(xmax=1.),
-    }
-
-    study_zone.plot(
-        ax=ax,
-        norm=MidPointLogNorm(vmin=0.01, midpoint=1., vmax=10),
-        **plot_cfg,
-        legend_kwds=dict(**legend_kwds)
-    )
-    p = mpl.patches.Patch(color='lightgrey', label='0 or 1 Twitter user')
-    ax.legend(handles=[p], loc='lower right', fontsize='20')
 
 
 def plot_corr(counties, municipalities):
@@ -169,6 +83,7 @@ def plot_corr(counties, municipalities):
     axes[1].text(.05, .9, "B", transform=axes[1].transAxes, fontsize='25')
     return axes
 
+
 def plot_corr_aus_sao(study_zone):
     fig, ax = plt.subplots(1, 1, figsize=(8.5, 8.5))
 
@@ -191,4 +106,3 @@ def plot_corr_aus_sao(study_zone):
     ax.set_ylabel('Twitter percentage of population', fontsize=20)
     ax.grid(True)
     return ax
-
