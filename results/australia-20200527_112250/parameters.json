@@ -1,0 +1,21 @@
+{
+  "model": {
+    "p": 0.2,
+    "gamma": 0.85,
+    "region_sampling": {
+      "name": "transitionZipf",
+      "zipfs": 1.2,
+      "beta": 0.05
+    },
+    "jump_size_sampling": {
+      "name": "trueProb"
+    }
+  },
+  "daily_trips_sampling": {
+    "name": "normal",
+    "mean": 3.14,
+    "std": 1.8
+  },
+  "n_days": 140,
+  "geotweets_path": ""
+}
