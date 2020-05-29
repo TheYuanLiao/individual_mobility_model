@@ -180,14 +180,19 @@ def generic_plot_dist_distribution(ax, distance_sums=[], titles=[], ticks=None, 
     for d in distance_sums:
         ax.plot(d.index.right, np.cumsum(d.values), zorder=2)
 
+    rug_ticks = []
     for x in distance_sums[0].index.left:
-        ax.axvline(x, color=(0.5, 0.5, 0.5, 0.5), linewidth=1, zorder=1)
-    ax.axvline(distance_sums[0].index.right[-1], color='black', linewidth=0.25, zorder=1)
+        rug_ticks.append(x)
+        #ax.axvline(x, color=(0.5, 0.5, 0.5, 0.5), linewidth=1, zorder=1)
+    rug_ticks.append(distance_sums[0].index.right[-1])
+    #ax.axvline(distance_sums[0].index.right[-1], color='black', linewidth=0.25, zorder=1)
+    bottom, top = ax.get_ylim()
+    ax.plot(rug_ticks, [bottom] * len(rug_ticks), '|', color='k')
     ax.set_xscale('log')
     ax.set_yscale(yscale)
     ax.set_ylabel('Cumulative percentage of trips')
     ax.set_xlabel('Distance (km)')
-    ax.legend(labels=titles)
+    ax.legend(labels=titles, loc='center right')
     if ticks is not None:
         ax.set_xticks(ticks)
         ax.get_xaxis().set_major_formatter(mpl.ticker.ScalarFormatter())
