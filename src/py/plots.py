@@ -190,7 +190,7 @@ def generic_plot_dist_distribution(ax, distance_sums=[], titles=[], ticks=None, 
     ax.plot(rug_ticks, [bottom] * len(rug_ticks), '|', color='k')
     ax.set_xscale('log')
     ax.set_yscale(yscale)
-    ax.set_ylabel('Cumulative percentage of trips')
+    ax.set_ylabel('Cumulative share of trips')
     ax.set_xlabel('Distance (km)')
     ax.legend(labels=titles, loc='center right')
     if ticks is not None:
