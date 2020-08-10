@@ -33,4 +33,3 @@ See grid search for how it's configured.
 Due to the differences between Sweden and Netherlands/Sao Paulo in terms of structure there are two gridsearch scripts.
 `src/py/gridsearch.py` performs grid search in National/East/West area in Sweden.
 `src/py/generic-gridsearch.py` performs grid search in Netherlands/Sao Paulo.
-
