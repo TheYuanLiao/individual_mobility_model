@@ -1,4 +1,4 @@
-# Master thesis
+# Master thesis: Individual Mobility Model
 Kristoffer Ek & Eric Wennerberg
 
 ## Bootstrap environment
