@@ -25,7 +25,6 @@ for beta in betas:
                         p=p,
                         gamma=gamma,
                         region_sampling=models.RegionTransitionZipf(beta=beta, zipfs=1.2),
-                        jump_size_sampling=models.JumpSizeTrueProb(),
                     ),
                     n_days=7 * 20,
                     daily_trips_sampling=models.NormalDistribution(mean=3.14, std=1.8),

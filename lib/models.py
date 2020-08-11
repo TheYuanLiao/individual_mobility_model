@@ -20,12 +20,12 @@ class PreferentialReturn:
     How regions should be sampled when returning.
     Defaults to the true probability of visiting a region.
 
-    :param jump_size_sampling:
-    How jump sizes should be sampled when exploring.
+    :param direction_jump_size_sampling:
+    How directions and jump sizes should be sampled when exploring.
     Defaults to the true distribution observed from tweets.
     """
 
-    def __init__(self, p=None, gamma=None, region_sampling=None, jump_size_sampling=None, direction_sampling=None):
+    def __init__(self, p=None, gamma=None, region_sampling=None, direction_jump_size_sampling=None):
         if p is None:
             raise Exception('p must be set')
         self.p = p
@@ -41,26 +41,22 @@ class PreferentialReturn:
             region_sampling = RegionTrueProb()
         self.region_sampling = region_sampling
 
-        if direction_sampling is None:
-            direction_sampling = DirectionTrueProb()
-        self.direction_sampling = direction_sampling
+        if direction_jump_size_sampling is None:
+            direction_jump_size_sampling = JumpSizeDirectionTrueProb()
+        self.direction_jump_size_sampling = direction_jump_size_sampling
 
-        if jump_size_sampling is None:
-            jump_size_sampling = JumpSizeTrueProb()
-        self.jump_size_sampling = jump_size_sampling
 
     def describe(self):
         return {
             "p": self.p,
             "gamma": self.gamma,
             "region_sampling": self.region_sampling.describe(),
-            "jump_size_sampling": self.jump_size_sampling.describe(),
+            "direction_jump_size_sampling": self.direction_jump_size_sampling.describe(),
         }
 
     def fit(self, tweets):
         self.region_sampling.fit(tweets)
-        self.jump_size_sampling.fit(tweets)
-        self.direction_sampling.fit(tweets)
+        self.direction_jump_size_sampling.fit(tweets)
 
         self.regions = tweets.groupby('region').head(1).set_index('region')
 
@@ -82,8 +78,7 @@ class PreferentialReturn:
         r = np.random.uniform(0, 1)
         if r < self.exploration_prob:
             prev_lat, prev_lng = prev[1], prev[2]
-            jump_size_m = self.jump_size_sampling.sample()
-            bearing = self.direction_sampling.sample()
+            bearing, jump_size_m = self.direction_jump_size_sampling.sample()
             lat, lng = latlngshift(prev_lat, prev_lng, jump_size_m, bearing)
             return ["point", lat, lng, -1]
         else:
@@ -372,6 +367,44 @@ class DirectionTrueProb:
 
     def sample(self):
         return np.random.choice(self.bearings)
+
+
+class JumpSizeDirectionTrueProb:
+    """
+    Sample from the joint probability distribution of bearing and jump size.
+    """
+    def __init__(self):
+        self.bearings = None
+        self.jump_sizes_km = None
+
+    def describe(self):
+        return {
+            "name": "directionJumpTrueProb"
+        }
+
+    def fit(self, tweets):
+        gaps = mscthesis.gaps(tweets)
+        gaps = gaps[gaps['region_origin'] != gaps['region_destination']]
+        bearings = mscthesis.coordinates_bearing(
+            gaps.latitude_origin.values,
+            gaps.longitude_origin.values,
+            gaps.latitude_destination.values,
+            gaps.longitude_destination.values,
+        )
+        lines = gaps[[
+            'latitude_origin', 'longitude_origin',
+            'latitude_destination', 'longitude_destination',
+        ]].values
+        self.bearings = bearings
+        self.jump_sizes_km = [6371.0088 * haversine_distances(
+            X=np.radians([_[:2]]),
+            Y=np.radians([_[2:]]),
+        )[0, 0] for _ in lines]
+
+    def sample(self):
+        joints = np.array(tuple(zip(self.bearings, self.jump_sizes_km)))
+        idx = np.random.randint(joints.shape[0], size=1)[0]
+        return joints[idx, 0], joints[idx, 1] * 1000
 
 
 class Sampler:
