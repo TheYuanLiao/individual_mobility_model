@@ -9,7 +9,7 @@ import validation
 import plots
 import pipeline
 
-results_dir = "./../../results"
+results_dir = os.getcwd() + "/results"
 
 ps = [0.3] #0.2
 betas = [0.03, 0.04, 0.05]
@@ -28,7 +28,7 @@ for beta in betas:
                     ),
                     n_days=7 * 20,
                     daily_trips_sampling=models.NormalDistribution(mean=3.14, std=1.8),
-                    geotweets_path="./../../dbs/sweden/geotweets.csv",
+                    geotweets_path=os.getcwd() + "/dbs/sweden/geotweets.csv",
                 )
             )
 
@@ -40,12 +40,7 @@ if __name__ == "__main__":
     cfgs = pipeline.config_product(
         visit_factories=visit_factories,
         home_locations_paths=[
-            "./../../dbs/sweden/homelocations.csv",
-        ],
-        gravity_models=[
-            validation.GravityModel(beta=0.03),
-            # validation.GravityModel(beta=0.025),
-            # validation.GravityModel(beta=0.035),
+            os.getcwd() + "/dbs/sweden/homelocations.csv",
         ]
     )
     pipe = pipeline.Pipeline()
@@ -63,39 +58,22 @@ if __name__ == "__main__":
             json.dump(cfg.describe(), f, indent=2)
 
         result = pipe.run(cfg)
-        pipe.visits.to_csv("./../../dbs/sweden/visits_{}.csv".format(run_id))
+        pipe.visits.to_csv(os.getcwd() + "/dbs/sweden/visits_{}.csv".format(run_id))
         spssim_scores = dict()
         for scale in validation.scales:
             odmfig = plots.plot_odms(
                 [
                     result.sparse_odms[scale],
-                    result.seed_odms[scale],
-                    result.dense_odms[scale],
                     pipe.sampers.odm[scale]
                 ],
-                ['model', 'gravity_seed', 'gravity', 'sampers'],
+                ['model', 'sampers'],
             )
             odmfig.savefig("{}/odms-{}.png".format(run_directory, scale), bbox_inches='tight', dpi=140)
-
-            score = result.spssim_scores[scale]
-            score.to_csv("{}/score-{}.csv".format(run_directory, scale))
-
-            spssimfig = plots.plot_spssim_score(score)
-            spssimfig.savefig("{}/score-{}.png".format(run_directory, scale), bbox_inches='tight', dpi=140)
-
-            sampers_weighted_score = (score.score * score.sampers_weight).sum()
-            print("sampers weighted score =", sampers_weighted_score)
-            twitter_weighted_score = (score.score * score.twitter_weight).sum()
-            print("twitter weighted score =", twitter_weighted_score)
-            spssim_scores[scale] = {
-                "sampers_weighted_score": sampers_weighted_score,
-                "twitter_weighted_score": twitter_weighted_score,
-            }
 
             distance_metrics = result.distance_metrics[scale]
             distance_metrics.to_csv("{}/distance-metrics-{}.csv".format(run_directory, scale))
 
-            dmfig = plots.plot_distance_metrics(distance_metrics, ['model', 'gravity_seed', 'gravity', 'sampers'])
+            dmfig = plots.plot_distance_metrics(distance_metrics, ['model', 'sampers'])
             dmfig.savefig("{}/distance-metrics-{}.png".format(run_directory, scale), bbox_inches='tight', dpi=140)
 
         with open("{}/results.json".format(run_directory), 'w') as f:

@@ -1,17 +1,18 @@
 import geopandas
 import pandas
 import regions
+import os
 
 shps = {
-    "national": "../../dbs/sampers/national/region.shp",
-    "west": "../../dbs/sampers/west/region.shp",
-    "east": "../../dbs/sampers/east/region.shp",
+    "national": os.getcwd() + "/dbs/sampers/national/region.shp",
+    "west": os.getcwd() + "/dbs/sampers/west/region.shp",
+    "east": os.getcwd() + "/dbs/sampers/east/region.shp",
 }
 
 odms = {
-    "national": "../../dbs/sampers/national/trips.csv",
-    "west":  "../../dbs/sampers/west/trips.csv",
-    "east": "../../dbs/sampers/east/trips.csv",
+    "national": os.getcwd() + "/dbs/sampers/national/trips.csv",
+    "west":  os.getcwd() + "/dbs/sampers/west/trips.csv",
+    "east": os.getcwd() + "/dbs/sampers/east/trips.csv",
 }
 
 bbox = {
