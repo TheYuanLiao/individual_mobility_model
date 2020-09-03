@@ -31,6 +31,7 @@ class Result:
     def __init__(self):
         self.sparse_odms = dict()
         self.distance_metrics = dict()
+        self.divergence_measure = dict()
 
 
 class Pipeline:
@@ -75,9 +76,10 @@ class Pipeline:
                 ],
                 ['model', 'sampers'],
             )
-
+            divergence_measure = self.distance_metrics.kullback_leibler(distance_metrics, ['model', 'sampers'])
             result.sparse_odms[scale] = sparse_odm
             result.distance_metrics[scale] = distance_metrics
+            result.divergence_measure[scale] = divergence_measure
 
         return result
 

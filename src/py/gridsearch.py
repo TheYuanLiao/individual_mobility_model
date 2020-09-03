@@ -11,9 +11,9 @@ import pipeline
 
 results_dir = os.getcwd() + "/results"
 
-ps = [0.3] #0.2
-betas = [0.03, 0.04, 0.05]
-gammas = [0.75, 0.8, 0.85]
+ps = [0.3, 0.6, 0.9] # 0.3
+betas = [0.01, 0.03, 0.05, 0.07] # [0.03, 0.04, 0.05]
+gammas = [0.2, 0.5, 0.8] # [0.75, 0.8, 0.85]
 
 visit_factories = []
 for beta in betas:
@@ -59,7 +59,6 @@ if __name__ == "__main__":
 
         result = pipe.run(cfg)
         pipe.visits.to_csv(os.getcwd() + "/dbs/sweden/visits_{}.csv".format(run_id))
-        spssim_scores = dict()
         for scale in validation.scales:
             odmfig = plots.plot_odms(
                 [
@@ -77,7 +76,7 @@ if __name__ == "__main__":
             dmfig.savefig("{}/distance-metrics-{}.png".format(run_directory, scale), bbox_inches='tight', dpi=140)
 
         with open("{}/results.json".format(run_directory), 'w') as f:
-            json.dump(spssim_scores, f, indent=2)
+            json.dump(result.divergence_measure, f, indent=2)
 
         # matplotlib keeps state (figures in global state)
         # We don't need the figures after writing to file so close them.

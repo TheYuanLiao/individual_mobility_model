@@ -175,3 +175,16 @@ class DistanceMetrics:
             metrics,
             columns=['distance'] + [t + '_mean' for t in titles] + [t + '_variance' for t in titles] + [t + '_sum' for t in titles]
         ).set_index('distance')
+
+    def kullback_leibler(self, distances, titles=None):
+        """
+        :param distances:
+        A data frame, output of compute(); _sum will be used to calculate Kullback-Leibler divergence measure
+        """
+        if (titles == None) | (len(titles) != 2):
+            raise Exception("Two distance distributions need to be specified.")
+        distances = distances.loc[distances[titles[1] + '_sum'] != 0, :]
+        d_ground_truth = distances[titles[0] + '_sum'].values
+        d_model = distances[titles[1] + '_sum'].values
+        d_kl = sum(d_ground_truth * np.log10(d_ground_truth / d_model))
+        return d_kl
