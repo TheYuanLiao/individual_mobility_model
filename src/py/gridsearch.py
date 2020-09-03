@@ -28,7 +28,7 @@ for beta in betas:
                     ),
                     n_days=7 * 20,
                     daily_trips_sampling=models.NormalDistribution(mean=3.14, std=1.8),
-                    geotweets_path=os.getcwd() + "/dbs/sweden/geotweets.csv",
+                    geotweets_path=os.getcwd() + "/dbs/sweden/geotweets_c.csv",
                 )
             )
 
