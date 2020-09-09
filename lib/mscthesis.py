@@ -5,7 +5,7 @@ from datetime import timedelta, timezone
 import sqlite3
 from sklearn.cluster import DBSCAN
 import math
-
+import os
 
 def cluster(ts, eps_km=0.1, min_samples=1):
     """
@@ -150,8 +150,8 @@ def remove_consecutive_region_visits(visits):
 
 
 geotweet_paths = {
-    "sweden": "./../../dbs/sweden/geotweets.csv",
-    "sweden_infered": "./../../dbs/sweden/geotweets_infered.csv",
+    "sweden": os.getcwd() + "/dbs/sweden/geotweets.csv",
+    "sweden_infered": os.getcwd() + "/dbs/sweden/geotweets_infered.csv",
 }
 
 
@@ -308,7 +308,7 @@ def trips_from_geotweets_morning_infer(df):
 
 
 def tweets_from_sqlite(db):
-    conn = sqlite3.connect('./../../dbs/' + db)
+    conn = sqlite3.connect('../../dbs/' + db)
     df_raw = pd.read_sql_query("SELECT * FROM geo_tweet order by user_id", con=conn)
     return df_raw.rename(columns={
         'tweet_id': 'tweetid',
@@ -339,7 +339,7 @@ def travel_survey_trips_clean(df):
     # purpose
     df = df.dropna(subset=['purpose'])
     df = df.assign(purpose=df['purpose'].astype(int))
-    pmap = pd.read_excel("./../../dbs/Swedish National Travel Survey (2011-2016)/variable_values.xlsx",
+    pmap = pd.read_excel("../../dbs/Swedish National Travel Survey (2011-2016)/variable_values.xlsx",
                          sheet_name="purpose")
     pmap = pmap.rename(columns={'value': 'purpose'})
     df = df.merge(pmap, on='purpose').rename(columns={'meaning': 'purpose_meaning'})

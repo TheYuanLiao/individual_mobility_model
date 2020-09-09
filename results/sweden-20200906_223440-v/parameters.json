@@ -1,0 +1,24 @@
+{
+  "visits": {
+    "model": {
+      "p": 0.3,
+      "gamma": 0.8,
+      "region_sampling": {
+        "name": "transitionZipf",
+        "zipfs": 1.2,
+        "beta": 0.03
+      },
+      "direction_jump_size_sampling": {
+        "name": "directionJumpTrueProb"
+      }
+    },
+    "daily_trips_sampling": {
+      "name": "normal",
+      "mean": 3.14,
+      "std": 1.8
+    },
+    "n_days": 140,
+    "geotweets_path": "D:\\individual-mobility-model/dbs/sweden/geotweets_v.csv"
+  },
+  "home_locations": "D:\\individual-mobility-model/dbs/sweden/homelocations.csv"
+}

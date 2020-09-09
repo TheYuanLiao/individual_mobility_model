@@ -12,12 +12,12 @@ import saopaulo
 # import netherlands
 import genericvalidation
 
-results_dir = "./../../results"
+results_dir = os.getcwd() + "/results"
 
 region = "saopaulo"
 zone_loader = saopaulo.zones
 odm_loader = saopaulo.odm
-geotweets_path = "./../../dbs/{}/geotweets.csv".format(region)
+geotweets_path = os.getcwd() + "/dbs/{}/geotweets_c.csv".format(region)
 
 # Remove tweets on weekends?
 only_weekday = True
@@ -25,9 +25,9 @@ only_weekday = True
 # Only run baseline, and not grid search
 only_run_baseline = False
 
-ps = [0.3, 0.6, 0.9]
-gammas = [0.2, 0.5, 0.8]
-betas = [0.01, 0.04, 0.07]
+ps = [0.8, 0.95]
+gammas = [0.4, 0.6]
+betas = [0.06, 0.08]
 
 visit_factories = []
 for beta in betas:
@@ -38,8 +38,7 @@ for beta in betas:
                     model=models.PreferentialReturn(
                         p=p,
                         gamma=gamma,
-                        region_sampling=models.RegionTransitionZipf(beta=beta, zipfs=1.2),
-                        jump_size_sampling=models.JumpSizeTrueProb(),
+                        region_sampling=models.RegionTransitionZipf(beta=beta, zipfs=1.2)
                     ),
                     n_days=7 * 20,
                     daily_trips_sampling=models.NormalDistribution(mean=3.14, std=1.8),
@@ -109,7 +108,7 @@ if __name__ == "__main__":
         # Calculate visits
         visits = visit_factory.sample(geotweets)
 
-        visits_dir = "./../../dbs/{}/visits".format(region)
+        visits_dir = os.getcwd() + "/dbs/{}/visits".format(region)
         visits_file = "{}/{}.csv".format(visits_dir, run_id)
         print("Saving visits to csv: {}".format(visits_file))
         os.makedirs(visits_dir, exist_ok=True)
@@ -122,14 +121,10 @@ if __name__ == "__main__":
             ['groundtruth', 'model']
         )
         dms.to_csv("{}/distance-metrics.csv".format(run_directory))
+        divergence_measure = validation.DistanceMetrics().kullback_leibler(dms, titles=['groundtruth', 'model'])
 
-        sqrerr = np.square(np.subtract(dms['groundtruth_sum'], dms['model_sum']))
-        print("MSE: {:.5e}".format(sqrerr.mean()))
-
-        # Not sure if this helps, but might as well clear as much of unneeded state as possible
-        visits = None
-        model_odm = None
-        dms = None
+        with open("{}/results.json".format(run_directory), 'w') as f:
+            json.dump(divergence_measure, f, indent=2)
 
         # matplotlib keeps state (figures in global state)
         # We don't need the figures after writing to file so close them.

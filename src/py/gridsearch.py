@@ -11,9 +11,9 @@ import pipeline
 
 results_dir = os.getcwd() + "/results"
 
-ps = [0.3, 0.6, 0.9] # 0.3
-betas = [0.01, 0.03, 0.05, 0.07] # [0.03, 0.04, 0.05]
-gammas = [0.2, 0.5, 0.8] # [0.75, 0.8, 0.85]
+ps = [0.2, 0.4] #[0.3, 0.6, 0.9]
+gammas = [0.7, 0.9] #[0.2, 0.5, 0.8]
+betas = [0.02, 0.04]
 
 visit_factories = []
 for beta in betas:
@@ -52,13 +52,13 @@ if __name__ == "__main__":
         print()
         print("RUNID", run_id)
 
-        run_directory = "{}/{}".format(results_dir, run_id)
+        run_directory = "{}/{}-{}".format(results_dir, 'sweden', run_id)
         os.makedirs(run_directory, exist_ok=True)
         with open("{}/parameters.json".format(run_directory), 'w') as f:
             json.dump(cfg.describe(), f, indent=2)
 
         result = pipe.run(cfg)
-        pipe.visits.to_csv(os.getcwd() + "/dbs/sweden/visits_{}.csv".format(run_id))
+        pipe.visits.to_csv(os.getcwd() + "/dbs/sweden/visits/{}.csv".format(run_id))
         for scale in validation.scales:
             odmfig = plots.plot_odms(
                 [

@@ -1,14 +1,14 @@
 import geopandas as gpd
 import pandas as pd
-
+import os
 
 metric_epsg = "EPSG:28992"
 
-counties = gpd.read_file('../../dbs/netherlands/provinces.shp').to_crs(metric_epsg)
-municipalities = gpd.read_file('../../dbs/netherlands/gem_2017.shp').to_crs(metric_epsg)
+counties = gpd.read_file(os.getcwd() + '/dbs/netherlands/provinces.shp').to_crs(metric_epsg)
+municipalities = gpd.read_file(os.getcwd() + '/dbs/netherlands/gem_2017.shp').to_crs(metric_epsg)
 
 def zones():
-    _zones = gpd.read_file('../../dbs/netherlands/mobility_data/CBS_PC4_2017_v1.shp')
+    _zones = gpd.read_file(os.getcwd() + '/dbs/netherlands/mobility_data/CBS_PC4_2017_v1.shp')
     _zones = _zones.rename(columns={"PC4": "zone"})[['zone', 'geometry']]
     return _zones
 
@@ -18,7 +18,7 @@ def boundary():
 
 
 def odm():
-    sheet1 = pd.read_excel("../../dbs/netherlands/mobility_data/OViN2017_Databestand.xlsx")
+    sheet1 = pd.read_excel(os.getcwd() + "/dbs/netherlands/mobility_data/OViN2017_Databestand.xlsx")
     trips = sheet1[
         ['OPID', 'Wogem', 'Jaar', 'Maand', 'Dag', 'VerplID',
          'VertUur', 'VertPC', 'AankUur', 'AankPC', 'FactorV']]

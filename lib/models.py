@@ -1,9 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.metrics.pairwise import haversine_distances
-from math import pi, cos, sin
 import mscthesis
-import validation
 
 
 class PreferentialReturn:
