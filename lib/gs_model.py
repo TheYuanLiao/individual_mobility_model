@@ -1,194 +1,193 @@
-import json
-import datetime
 import os
-import matplotlib.pyplot as plt
-import numpy as np
-import models
-import validation
-import mscthesis
-import saopaulo
-import netherlands
-import genericvalidation
-import pipeline
-import plots
+import subprocess
+import pandas as pd
+import geopandas as gpd
+import lib.models as models
+import lib.validation as validation
+import lib.mscthesis as mscthesis
+import lib.genericvalidation as genericvalidation
+import lib.sweden as sweden
+import lib.saopaulo as saopaulo
+import lib.netherlands as netherlands
 
 
-def sweden_visits(ps, gammas, betas, run_id, scale, geotweets_path="/dbs/sweden/geotweets_v.csv"):
-    results_dir = os.getcwd() + "/results"
-    visit_factories = []
-    for beta in betas:
-        for p in ps:
-            for gamma in gammas:
-                visit_factories.append(
-                    models.Sampler(
-                        model=models.PreferentialReturn(
-                            p=p,
-                            gamma=gamma,
-                            region_sampling=models.RegionTransitionZipf(beta=beta, zipfs=1.2),
-                        ),
-                        n_days=7 * 20,
-                        daily_trips_sampling=models.NormalDistribution(mean=3.14, std=1.8),
-                        geotweets_path=os.getcwd() + geotweets_path,
-                    )
-                )
+def get_repo_root():
+    """Get the root directory of the repo."""
+    dir_in_repo = os.path.dirname(os.path.abspath('__file__')) # os.getcwd()
+    return subprocess.check_output('git rev-parse --show-toplevel'.split(),
+                                   cwd=dir_in_repo,
+                                   universal_newlines=True).rstrip()
 
-    for f in visit_factories:
-        print(f.describe())
-    cfgs = pipeline.config_product(
-        visit_factories=visit_factories,
-        home_locations_paths=[
-            os.getcwd() + "/dbs/sweden/homelocations.csv",
-        ]
-    )
-    pipe = pipeline.Pipeline()
-    pipe.prepare()
 
-    for cfg in cfgs:
-        print("RUNID", run_id)
+ROOT_dir = get_repo_root()
 
-        run_directory = "{}/{}-{}-v".format(results_dir, 'sweden', run_id)
-        os.makedirs(run_directory, exist_ok=True)
-        with open("{}/parameters.json".format(run_directory), 'w') as f:
-            json.dump(cfg.describe(), f, indent=2)
+region_path = {
+    'sweden-national': {
+        'home_locations_path': ROOT_dir + "/dbs/sweden/homelocations.csv",
+        'tweets_calibration': ROOT_dir + "/dbs/sweden/geotweets_c.csv",
+        'tweets_valibration': ROOT_dir + "/dbs/sweden/geotweets_v.csv",
+        'gt': sweden.GroundTruthLoader(scale='national')
+    },
+    'sweden-west': {
+        'home_locations_path': ROOT_dir + "/dbs/sweden/homelocations.csv",
+        'tweets_calibration': ROOT_dir + "/dbs/sweden/geotweets_c.csv",
+        'tweets_valibration': ROOT_dir + "/dbs/sweden/geotweets_v.csv",
+        'gt': sweden.GroundTruthLoader(scale='west')
+    },
+    'sweden-east': {
+        'home_locations_path': ROOT_dir + "/dbs/sweden/homelocations.csv",
+        'tweets_calibration': ROOT_dir + "/dbs/sweden/geotweets_c.csv",
+        'tweets_valibration': ROOT_dir + "/dbs/sweden/geotweets_v.csv",
+        'gt': sweden.GroundTruthLoader(scale='east')
+    },
+    'netherlands': {
+        'home_locations_path': None,
+        'tweets_calibration': ROOT_dir + "/dbs/netherlands/geotweets_c.csv",
+        'tweets_valibration': ROOT_dir + "/dbs/netherlands/geotweets_v.csv",
+        'gt': netherlands.GroundTruthLoader()
+    },
+    'saopaulo': {
+        'home_locations_path': None,
+        'tweets_calibration': ROOT_dir + "/dbs/saopaulo/geotweets_c.csv",
+        'tweets_valibration': ROOT_dir + "/dbs/saopaulo/geotweets_v.csv",
+        'gt': saopaulo.GroundTruthLoader()
+    }
+}
 
-        result = pipe.run(cfg)
-        pipe.visits.to_csv(os.getcwd() + "/dbs/sweden/visits/{}-v.csv".format(run_id))
-        odmfig = plots.plot_odms(
-            [
-                result.sparse_odms[scale],
-                pipe.sampers.odm[scale]
-            ],
-            ['model', 'sampers'],
+
+class RegionDataPrep:
+    """
+    RegionDataPrep will preload Twitter data for calibration, validation, home locations
+    and ground truth (zones & data)
+    """
+    def __init__(self, region=None):
+        if region is None:
+            raise Exception("A region must be set")
+        self.region = region
+        self.bbox = None
+        self.zones = None
+        self.gt_odm = None
+        self.distances = None
+        self.distance_quantiles = None
+        self.home_locations = None
+        self.tweets_calibration = None
+        self.tweets_validation = None
+        self.kl_baseline = None
+        self.dms = None
+
+    def load_zones_odm(self):
+        ground_truth = region_path[self.region]['gt']
+        self.bbox = ground_truth.bbox
+
+        # load zones
+        ground_truth.load_zones()
+        # load odm
+        ground_truth.load_odm()
+
+        # assign values of zones and gt_odm
+        self.zones = ground_truth.zones
+        self.gt_odm = ground_truth.odm
+
+        # print("Calculating distances...")
+        self.distances = genericvalidation.zone_distances(self.zones)
+        # print("Calculating distance quantiles...")
+        self.distance_quantiles = genericvalidation.distance_quantiles(self.distances)
+        if self.region == 'sweden-national':
+            self.gt_odm[self.distances < 100] = 0
+            self.gt_odm = self.gt_odm / self.gt_odm.sum()
+        self.dms = validation.DistanceMetrics().compute(
+            self.distance_quantiles,
+            [self.gt_odm],
+            ['groundtruth']
         )
-        odmfig.savefig("{}/odms-{}.png".format(run_directory, scale), bbox_inches='tight', dpi=140)
 
-        distance_metrics = result.distance_metrics[scale]
-        distance_metrics.to_csv("{}/distance-metrics-{}.csv".format(run_directory, scale))
+    def load_geotweets(self, type='calibration', only_weekday=True):
+        if type == 'calibration':
+            geotweets_path = region_path[self.region]['tweets_calibration']
+        else:
+            geotweets_path = region_path[self.region]['tweets_valibration']
+        geotweets = mscthesis.read_geotweets_raw(geotweets_path).set_index('userid')
+        if only_weekday:
+            # Only look at weekday trips
+            geotweets = geotweets[(geotweets['weekday'] < 6) & (0 < geotweets['weekday'])]
+        # Remove users who don't have home visit in geotweets
+        home_visits = geotweets.query("label == 'home'").groupby('userid').size()
+        geotweets = geotweets.loc[home_visits.index]
+        # read home locations
+        if 'sweden' in self.region:
+            home_locations = pd.read_csv(region_path[self.region]['home_locations_path']).set_index('userid')
+            self.home_locations = gpd.GeoDataFrame(
+                home_locations,
+                crs="EPSG:4326",
+                geometry=gpd.points_from_xy(home_locations.longitude, home_locations.latitude),
+            ).to_crs("EPSG:3006")
+        # Remove users with less than 20 tweets
+        tweetcount = geotweets.groupby('userid').size()
+        geotweets = geotweets.drop(labels=tweetcount[tweetcount < 20].index)
+        # Remove users with only one region
+        regioncount = geotweets.groupby(['userid', 'region']).size().groupby('userid').size()
+        geotweets = geotweets.drop(labels=regioncount[regioncount < 2].index)
+        # Ensure the tweets are sorted chronologically
+        if type == 'calibration':
+            self.tweets_calibration = geotweets.sort_values(by=['userid', 'createdat'])
+        else:
+            self.tweets_validation = geotweets.sort_values(by=['userid', 'createdat'])
 
-        dmfig = plots.plot_distance_metrics(distance_metrics, ['model', 'sampers'])
-        dmfig.savefig("{}/distance-metrics-{}.png".format(run_directory, scale), bbox_inches='tight', dpi=140)
-
-        with open("{}/results.json".format(run_directory), 'w') as f:
-            json.dump(result.divergence_measure, f, indent=2)
-
-        # matplotlib keeps state (figures in global state)
-        # We don't need the figures after writing to file so close them.
-        # Otherwise memory usage will be immense.
-        plt.close('all')
-        return result.divergence_measure
-
-
-def generic_visits(ps, gammas, betas, run_id, region, scale='national'):
-    results_dir = os.getcwd() + "/results"
-    if region == 'saopaulo':
-        zone_loader = saopaulo.zones
-        odm_loader = saopaulo.odm
-
-    if region == 'netherlands':
-        zone_loader = netherlands.zones
-        odm_loader = netherlands.odm
-
-    geotweets_path = os.getcwd() + "/dbs/{}/geotweets_v.csv".format(region)
-
-    # Remove tweets on weekends?
-    only_weekday = True
-
-    # Only run baseline, and not grid search
-    only_run_baseline = False
-    visit_factories = []
-    for beta in betas:
-        for p in ps:
-            for gamma in gammas:
-                visit_factories.append(
-                    models.Sampler(
-                        model=models.PreferentialReturn(
-                            p=p,
-                            gamma=gamma,
-                            region_sampling=models.RegionTransitionZipf(beta=beta, zipfs=1.2)
-                        ),
-                        n_days=7 * 20,
-                        daily_trips_sampling=models.NormalDistribution(mean=3.14, std=1.8),
-                        geotweets_path="",  # We read the geotweets once instead.
-                    )
-                )
-
-    print("Grid searching [{} configurations]...".format(len(visit_factories)))
-
-    print("Loading zones...")
-    zones = zone_loader()
-
-    print("Loading odm...")
-    odm = odm_loader()
-
-    print("Calculating distances...")
-    distance = genericvalidation.zone_distances(zones)
-    print("Calculating distance quantiles...")
-    qgrps = genericvalidation.distance_quantiles(distance)
-
-    print("Reading and filtering geotweets...")
-    geotweets = mscthesis.read_geotweets_raw(geotweets_path).set_index('userid')
-    if only_weekday:
-        # Only look at weekday trips
-        geotweets = geotweets[(geotweets['weekday'] < 6) & (0 < geotweets['weekday'])]
-    # Remove users who don't have home visit in geotweets
-    home_visits = geotweets.query("label == 'home'").groupby('userid').size()
-    geotweets = geotweets.loc[home_visits.index]
-    # Remove users with less than 20 tweets
-    tweetcount = geotweets.groupby('userid').size()
-    geotweets = geotweets.drop(labels=tweetcount[tweetcount < 20].index)
-    # Remove users with only one region
-    regioncount = geotweets.groupby(['userid', 'region']).size().groupby('userid').size()
-    geotweets = geotweets.drop(labels=regioncount[regioncount < 2].index)
-    # Ensure the tweets are sorted chronologically
-    geotweets = geotweets.sort_values(by=['userid', 'createdat'])
-
-    if only_run_baseline:
-        print("Calculating baseline results...")
-        baseline = models.geotweets_to_visits(geotweets)
-        baseline_odm = genericvalidation.visits_to_odm(baseline, zones)
-        dms = validation.DistanceMetrics().compute(
-            qgrps,
-            [odm, baseline_odm],
-            ['groundtruth', 'model'] # intentionally named model to be consistent with others
+    def kl_baseline_compute(self):
+        self.dms = validation.DistanceMetrics().compute(
+            self.distance_quantiles,
+            [self.gt_odm],
+            ['groundtruth']
         )
-        run_directory = "{}/{}-baseline".format(results_dir, region)
-        os.makedirs(run_directory, exist_ok=True)
-        dms.to_csv("{}/distance-metrics.csv".format(run_directory))
-        exit(0)
+        self.dms.loc[:, 'baseline_sum'] = 0
+        self.dms.loc[self.dms['groundtruth_sum'] != 0, 'baseline_sum'] = 1 / len(self.dms.loc[self.dms['groundtruth_sum'] != 0, :])
+        self.kl_baseline = validation.DistanceMetrics().kullback_leibler(self.dms, titles=['groundtruth', 'baseline'])
 
-    for visit_factory in visit_factories:
-        print("RUNID", run_id)
-        print(visit_factory.describe())
 
-        run_directory = "{}/{}-{}-v".format(results_dir, region, run_id)
-        os.makedirs(run_directory, exist_ok=True)
-        # Save parameters
-        with open("{}/parameters.json".format(run_directory), 'w') as f:
-            json.dump(visit_factory.describe(), f, indent=2)
+class VisitsGeneration:
+    """
+    VisitsGeneration take region and its zones, odm, and distance groups as initiated.
+    It generate visits and compare the odm_model with the ground truth.
+    It returns the kl divergence measure quantifying the similarity between the above two distance distributions.
+    """
+    def __init__(self, region=None, bbox=None, zones=None, odm=None,
+                 distances=None, distance_quantiles=None, gt_dms=None):
+        self.region = region
+        self.zones = zones
+        self.odm = odm
+        self.distances = distances
+        self.distance_quantiles = distance_quantiles
+        self.gt_dms = gt_dms
+        self.bbox = bbox
 
+    def visits_gen_chunk(self, geotweets=None, p=None, gamma=None, beta=None, days=None):
+        visit_factory = models.Sampler(
+                            model=models.PreferentialReturn(
+                                p=p,
+                                gamma=gamma,
+                                region_sampling=models.RegionTransitionZipf(beta=beta, zipfs=1.2)
+                            ),
+                            n_days=days,
+                            daily_trips_sampling=models.NormalDistribution(mean=3.14, std=1.8)
+                        )
         # Calculate visits
         visits = visit_factory.sample(geotweets)
+        return visits
 
-        visits_dir = os.getcwd() + "/dbs/{}/visits".format(region)
-        visits_file = "{}/{}-v.csv".format(visits_dir, run_id)
-        print("Saving visits to csv: {}".format(visits_file))
-        os.makedirs(visits_dir, exist_ok=True)
-        visits.to_csv(visits_file)
-
-        model_odm = genericvalidation.visits_to_odm(visits, zones)
+    def visits2measure(self, visits=None, home_locations=None):
+        if 'sweden' in self.region:
+            n_visits_before = visits.shape[0]
+            home_locations_in_sampling = gpd.sjoin(home_locations, self.bbox)
+            visits = visits[visits.index.isin(home_locations_in_sampling.index)]
+            print("removed", n_visits_before - visits.shape[0], "visits due to sampling bbox")
+        model_odm = genericvalidation.visits_to_odm(visits, self.zones)
+        if self.region == 'sweden-national':
+            model_odm[self.distances < 100] = 0
         dms = validation.DistanceMetrics().compute(
-            qgrps,
-            [odm, model_odm],
-            ['groundtruth', 'model']
+            self.distance_quantiles,
+            [model_odm],
+            ['model']
         )
-        dms.to_csv("{}/distance-metrics.csv".format(run_directory))
+        dms.loc[:, 'groundtruth_sum'] = self.gt_dms['groundtruth_sum']
         divergence_measure = validation.DistanceMetrics().kullback_leibler(dms, titles=['groundtruth', 'model'])
-
-        with open("{}/results.json".format(run_directory), 'w') as f:
-            json.dump({scale: divergence_measure}, f, indent=2)
-
-        # matplotlib keeps state (figures in global state)
-        # We don't need the figures after writing to file so close them.
-        # Otherwise memory usage will be immense.
-        plt.close('all')
-        return {scale: divergence_measure}
+        return divergence_measure

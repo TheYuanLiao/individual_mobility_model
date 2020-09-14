@@ -1,6 +1,18 @@
 import geopandas
 from shapely.geometry import Polygon
 import os
+import subprocess
+
+
+def get_repo_root():
+    """Get the root directory of the repo."""
+    dir_in_repo = os.path.dirname(os.path.abspath('__file__')) # os.getcwd()
+    return subprocess.check_output('git rev-parse --show-toplevel'.split(),
+                                   cwd=dir_in_repo,
+                                   universal_newlines=True).rstrip()
+
+
+ROOT_dir = get_repo_root()
 
 # dont want to break others using countries and assuming epsg:3035
 countries_wgs = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
@@ -10,7 +22,7 @@ countries = countries_wgs.to_crs("EPSG:4326") # 3035
 sweden = countries[countries['name'] == "Sweden"]
 netherlands = countries[countries['name'] == "Netherlands"]
 
-counties = geopandas.read_file(os.getcwd() + "/dbs/alla_lan/alla_lan.shp").to_crs("EPSG:3035")
+counties = geopandas.read_file(ROOT_dir + "/dbs/alla_lan/alla_lan.shp").to_crs("EPSG:3035")
 gothenburg = counties[counties['ID'] == "14"]
 stockholm = counties[(counties['ID'] == "01") | (counties['ID'] == '04') | (counties['ID'] == '03')]
 

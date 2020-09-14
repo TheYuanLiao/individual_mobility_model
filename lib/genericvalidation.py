@@ -1,7 +1,7 @@
 from sklearn.metrics import pairwise_distances
 import pandas as pd
 import geopandas as gpd
-import mscthesis
+import lib.mscthesis as mscthesis
 
 
 def zone_distances(zones):

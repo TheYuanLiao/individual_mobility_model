@@ -2,17 +2,29 @@ import geopandas
 import pandas
 import regions
 import os
+import subprocess
+
+
+def get_repo_root():
+    """Get the root directory of the repo."""
+    dir_in_repo = os.path.dirname(os.path.abspath('__file__')) # os.getcwd()
+    return subprocess.check_output('git rev-parse --show-toplevel'.split(),
+                                   cwd=dir_in_repo,
+                                   universal_newlines=True).rstrip()
+
+
+ROOT_dir = get_repo_root()
 
 shps = {
-    "national": os.getcwd() + "/dbs/sampers/national/region.shp",
-    "west": os.getcwd() + "/dbs/sampers/west/region.shp",
-    "east": os.getcwd() + "/dbs/sampers/east/region.shp",
+    "national": ROOT_dir + "/dbs/sampers/national/region.shp",
+    "west": ROOT_dir + "/dbs/sampers/west/region.shp",
+    "east": ROOT_dir + "/dbs/sampers/east/region.shp",
 }
 
 odms = {
-    "national": os.getcwd() + "/dbs/sampers/national/trips.csv",
-    "west":  os.getcwd() + "/dbs/sampers/west/trips.csv",
-    "east": os.getcwd() + "/dbs/sampers/east/trips.csv",
+    "national": ROOT_dir + "/dbs/sampers/national/trips.csv",
+    "west":  ROOT_dir + "/dbs/sampers/west/trips.csv",
+    "east": ROOT_dir + "/dbs/sampers/east/trips.csv",
 }
 
 bbox = {

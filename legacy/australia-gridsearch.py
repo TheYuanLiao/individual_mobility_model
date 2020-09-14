@@ -9,7 +9,7 @@ import geopandas as gpd
 
 import models
 import mscthesis
-import australia
+from legacy import australia
 
 results_dir = "../results"
 

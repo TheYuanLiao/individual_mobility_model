@@ -7,6 +7,7 @@ from sklearn.cluster import DBSCAN
 import math
 import os
 
+
 def cluster(ts, eps_km=0.1, min_samples=1):
     """
     Clusters each users tweets with DBSCAN.

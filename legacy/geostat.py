@@ -1,8 +1,8 @@
 import pandas
 import geopandas
 
-shp_path = '../../dbs/geostat/grid/grid.shp'
-pop_path = '../../dbs/geostat/population.csv'
+shp_path = '../dbs/geostat/grid/grid.shp'
+pop_path = '../dbs/geostat/population.csv'
 
 
 def load(mask=None):

@@ -1,4 +1,4 @@
-import geostat
+from legacy import geostat
 import sampers
 import geopandas as gpd
 import pandas as pd

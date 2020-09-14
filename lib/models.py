@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.metrics.pairwise import haversine_distances
-import mscthesis
+import lib.mscthesis as mscthesis
 
 
 class PreferentialReturn:
@@ -42,7 +42,6 @@ class PreferentialReturn:
         if direction_jump_size_sampling is None:
             direction_jump_size_sampling = JumpSizeDirectionTrueProb()
         self.direction_jump_size_sampling = direction_jump_size_sampling
-
 
     def describe(self):
         return {
@@ -224,7 +223,6 @@ class GroupRegionZipfProb:
         )[0]
 
 
-
 class RegionTransitionZipf:
     """
     A region probability sampler that scales the observed probability of regions with
@@ -371,6 +369,7 @@ class JumpSizeDirectionTrueProb:
     """
     Sample from the joint probability distribution of bearing and jump size.
     """
+
     def __init__(self):
         self.bearings = None
         self.jump_sizes_km = None
@@ -416,7 +415,7 @@ class Sampler:
     How many trips should be sampled every day.
     """
 
-    def __init__(self, model=None, daily_trips_sampling=None, n_days=1, geotweets_path=None):
+    def __init__(self, model=None, daily_trips_sampling=None, n_days=1):
         if model is None:
             raise Exception("model must be set")
         self.model = model
@@ -425,21 +424,13 @@ class Sampler:
             daily_trips_sampling = StaticDistribution(4)
         self.daily_trips_sampling = daily_trips_sampling
 
-        if geotweets_path is None:
-            raise Exception("geotweets_path must be set")
-        self.geotweets_path = geotweets_path
-
         self.n_days = n_days
-
-        # variable for caching the output
-        self._visits = None
 
     def describe(self):
         return {
             "model": self.model.describe(),
             "daily_trips_sampling": self.daily_trips_sampling.describe(),
-            "n_days": self.n_days,
-            "geotweets_path": self.geotweets_path
+            "n_days": self.n_days
         }
 
     def sample(self, tweets=None):
@@ -480,13 +471,13 @@ class Sampler:
                     prev = current
 
             n_done += 1
-            if n_done % 250 == 0:
-                print("done with", n_done)
-
+            #if n_done % 250 == 0:
+                #print("done with", n_done)
+        # .set_index('userid')
         return pd.DataFrame(
             samples,
             columns=['userid', 'day', 'timeslot', 'kind', 'latitude', 'longitude', 'region'],
-        ).set_index('userid')
+        )
 
     def visits(self):
         if self._visits is None:

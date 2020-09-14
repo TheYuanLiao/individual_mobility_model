@@ -183,7 +183,7 @@ sampler = models.Sampler(
         travel_survey_trips_std,
     ),
     n_days=7*20,
-    geotweets_path="./../../dbs/sweden/geotweets.csv",
+    geotweets_path="../dbs/sweden/geotweets.csv",
 )
 
 samples = sampler.sample(geotweets)

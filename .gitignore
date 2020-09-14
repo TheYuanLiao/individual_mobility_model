@@ -3,3 +3,4 @@
 dbs
 *.pyc
 .ipynb_checkpoints
+legacy
