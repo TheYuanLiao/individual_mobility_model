@@ -45,10 +45,11 @@ class RegionParaSearch:
                                                 distances=self.rg.distances,
                                                 distance_quantiles=self.rg.distance_quantiles, gt_dms=self.rg.dms)
 
-    def gs_para(self, p, beta, gamma):
+    def gs_para(self, p, gamma, beta):
         # parallelize the generation of visits over days
         pool = mp.Pool(mp.cpu_count())
-        visits_list = pool.starmap(self.visits.visits_gen_chunk, [(self.rg.tweets_calibration, p, gamma, beta, x) for x in [7] * 20])
+        visits_list = pool.starmap(self.visits.visits_gen_chunk,
+                                   [(self.rg.tweets_calibration, p, gamma, beta, x) for x in [7] * 20])
         visits_total = pd.concat(visits_list).set_index('userid')
         pool.close()
         print('Visits generated:', len(visits_total))
@@ -64,27 +65,28 @@ class RegionParaSearch:
 
 
 if __name__ == '__main__':
-    # prepare region data by initiating the class
-    gs = RegionParaSearch(region='sweden-west')
-    gs.region_data_load()
+    for region2search in ['sweden-national', 'sweden-west', 'sweden-east', 'netherlands', 'saopaulo']:
+        # prepare region data by initiating the class
+        gs = RegionParaSearch(region=region2search)
+        gs.region_data_load()
 
-    # Start timing the code
-    start_time = time.time()
+        # Start timing the code
+        start_time = time.time()
 
-    # Bounded region of parameter space
-    pbounds = {'p': (0.01, 0.99), 'beta': (0.01, 0.99), 'gamma': (0.01, 0.99)}
+        # Bounded region of parameter space
+        pbounds = {'p': (0.01, 0.99), 'gamma': (0.01, 0.99), 'beta': (0.01, 0.99)}
 
-    optimizer = BayesianOptimization(
-        f=gs.gs_para,
-        pbounds=pbounds,
-        random_state=1,
-    )
+        optimizer = BayesianOptimization(
+            f=gs.gs_para,
+            pbounds=pbounds,
+            random_state=98,
+        )
 
-    logger = JSONLogger(path=ROOT_dir + "/results/logs_" + gs.region + ".json")
-    optimizer.subscribe(Events.OPTIMIZATION_STEP, logger)
-    optimizer.maximize(
-        init_points=3,
-        n_iter=200,
-    )
-    print(optimizer.max)
-    print("Elapsed time was %g seconds" % (time.time() - start_time))
+        logger = JSONLogger(path=ROOT_dir + "/results/logs_" + gs.region + ".json")
+        optimizer.subscribe(Events.OPTIMIZATION_STEP, logger)
+        optimizer.maximize(
+            init_points=8,
+            n_iter=50,
+        )
+        print(optimizer.max)
+        print(region2search, "is done. Elapsed time was %g seconds" % (time.time() - start_time))
