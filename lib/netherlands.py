@@ -15,6 +15,13 @@ def get_repo_root():
 ROOT_dir = get_repo_root()
 
 
+def trip_row(df):
+    row = df.iloc[0]
+    row['dest_zip'] = df.iloc[-1]['dest_zip']
+    row['dest_time'] = df.iloc[-1]['dest_time']
+    return row
+
+
 class GeoInfo:
     def __init__(self):
         self.metric_epsg = "EPSG:28992"
@@ -29,20 +36,14 @@ class GroundTruthLoader:
         self.boundary = None
         self.bbox = None
 
-    def zones(self):
+    def load_zones(self):
         _zones = gpd.read_file(ROOT_dir + '/dbs/netherlands/mobility_data/CBS_PC4_2017_v1.shp')
         self.zones = _zones.rename(columns={"PC4": "zone"})[['zone', 'geometry']]
 
     def boundary(self):
-        return self.zones.assign(a=1).dissolve(by='a').simplify(tolerance=0.2).to_crs("EPSG:4326")
+        self.boundary = self.zones.assign(a=1).dissolve(by='a').simplify(tolerance=0.2).to_crs("EPSG:4326")
 
-    def trip_row(self, df):
-        row = df.iloc[0]
-        row['dest_zip'] = df.iloc[-1]['dest_zip']
-        row['dest_time'] = df.iloc[-1]['dest_time']
-        return row
-
-    def odm(self):
+    def load_odm(self):
         sheet1 = pd.read_excel(ROOT_dir + "/dbs/netherlands/mobility_data/OViN2017_Databestand.xlsx")
         trips = sheet1[
             ['OPID', 'Wogem', 'Jaar', 'Maand', 'Dag', 'VerplID',
@@ -60,10 +61,12 @@ class GroundTruthLoader:
             'FactorV': 'weight_trip',
         })
         trips = trips.dropna(subset=['trip_id'])
-        trips = trips.groupby(['OPID', 'trip_id']).apply(self.trip_row)
+        trips = trips.groupby(['OPID', 'trip_id']).apply(trip_row)
         trips['origin_zip'] = trips['origin_zip'].astype('int64')
         trips['dest_zip'] = trips['dest_zip'].astype('int64')
         odms = trips.groupby(['origin_zip', 'dest_zip']).sum()['weight_trip']
-        z = self.zones
+        print(odms.head())
+        z = self.zones.zone
         odms = odms.reindex(pd.MultiIndex.from_product([z, z]), fill_value=0)
+        print(odms.head())
         self.odm = odms / odms.sum()

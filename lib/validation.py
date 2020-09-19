@@ -218,5 +218,8 @@ class DistanceMetrics:
                     else:
                         end_ind = tomerge[i + 1]
                     i = i + 1
-        d_kl = sum(d_gt_out * np.log10(d_gt_out / d_m_out))
+        if len(np.where(d_m_out == 0)[0]) == 0:
+            d_kl = sum(d_gt_out * np.log10(d_gt_out / d_m_out))
+        else:
+            d_kl = 999
         return d_kl

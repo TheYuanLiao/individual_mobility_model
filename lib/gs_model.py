@@ -25,31 +25,31 @@ region_path = {
     'sweden-national': {
         'home_locations_path': ROOT_dir + "/dbs/sweden/homelocations.csv",
         'tweets_calibration': ROOT_dir + "/dbs/sweden/geotweets_c.csv",
-        'tweets_valibration': ROOT_dir + "/dbs/sweden/geotweets_v.csv",
+        'tweets_validation': ROOT_dir + "/dbs/sweden/geotweets_v.csv",
         'gt': sweden.GroundTruthLoader(scale='national')
     },
     'sweden-west': {
         'home_locations_path': ROOT_dir + "/dbs/sweden/homelocations.csv",
         'tweets_calibration': ROOT_dir + "/dbs/sweden/geotweets_c.csv",
-        'tweets_valibration': ROOT_dir + "/dbs/sweden/geotweets_v.csv",
+        'tweets_validation': ROOT_dir + "/dbs/sweden/geotweets_v.csv",
         'gt': sweden.GroundTruthLoader(scale='west')
     },
     'sweden-east': {
         'home_locations_path': ROOT_dir + "/dbs/sweden/homelocations.csv",
         'tweets_calibration': ROOT_dir + "/dbs/sweden/geotweets_c.csv",
-        'tweets_valibration': ROOT_dir + "/dbs/sweden/geotweets_v.csv",
+        'tweets_validation': ROOT_dir + "/dbs/sweden/geotweets_v.csv",
         'gt': sweden.GroundTruthLoader(scale='east')
     },
     'netherlands': {
         'home_locations_path': None,
         'tweets_calibration': ROOT_dir + "/dbs/netherlands/geotweets_c.csv",
-        'tweets_valibration': ROOT_dir + "/dbs/netherlands/geotweets_v.csv",
+        'tweets_validation': ROOT_dir + "/dbs/netherlands/geotweets_v.csv",
         'gt': netherlands.GroundTruthLoader()
     },
     'saopaulo': {
         'home_locations_path': None,
         'tweets_calibration': ROOT_dir + "/dbs/saopaulo/geotweets_c.csv",
-        'tweets_valibration': ROOT_dir + "/dbs/saopaulo/geotweets_v.csv",
+        'tweets_validation': ROOT_dir + "/dbs/saopaulo/geotweets_v.csv",
         'gt': saopaulo.GroundTruthLoader()
     }
 }
@@ -105,7 +105,7 @@ class RegionDataPrep:
         if type == 'calibration':
             geotweets_path = region_path[self.region]['tweets_calibration']
         else:
-            geotweets_path = region_path[self.region]['tweets_valibration']
+            geotweets_path = region_path[self.region]['tweets_validation']
         geotweets = mscthesis.read_geotweets_raw(geotweets_path).set_index('userid')
         if only_weekday:
             # Only look at weekday trips
@@ -190,4 +190,4 @@ class VisitsGeneration:
         )
         dms.loc[:, 'groundtruth_sum'] = self.gt_dms['groundtruth_sum']
         divergence_measure = validation.DistanceMetrics().kullback_leibler(dms, titles=['groundtruth', 'model'])
-        return divergence_measure
+        return dms, divergence_measure

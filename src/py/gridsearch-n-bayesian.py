@@ -45,7 +45,7 @@ class RegionParaSearch:
                                                 distances=self.rg.distances,
                                                 distance_quantiles=self.rg.distance_quantiles, gt_dms=self.rg.dms)
 
-    def gs_para(self, p, gamma, beta):
+    def gs_para(self, p=None, gamma=None, beta=None):
         # parallelize the generation of visits over days
         pool = mp.Pool(mp.cpu_count())
         visits_list = pool.starmap(self.visits.visits_gen_chunk,
@@ -53,7 +53,7 @@ class RegionParaSearch:
         visits_total = pd.concat(visits_list).set_index('userid')
         pool.close()
         print('Visits generated:', len(visits_total))
-        divergence_measure = self.visits.visits2measure(visits=visits_total, home_locations=self.rg.home_locations)
+        _, divergence_measure = self.visits.visits2measure(visits=visits_total, home_locations=self.rg.home_locations)
         # append the result to the gridsearch file
         dic = {'region': self.region, 'p': p, 'beta': beta, 'gamma': gamma,
                'kl-baseline': self.rg.kl_baseline, 'kl': divergence_measure}
@@ -65,7 +65,8 @@ class RegionParaSearch:
 
 
 if __name__ == '__main__':
-    for region2search in ['sweden-national', 'sweden-west', 'sweden-east', 'netherlands', 'saopaulo']:
+    # ['sweden-west', 'sweden-east', 'netherlands', 'saopaulo', 'sweden-national']
+    for region2search in ['sweden-west', 'sweden-east', 'netherlands', 'saopaulo']:
         # prepare region data by initiating the class
         gs = RegionParaSearch(region=region2search)
         gs.region_data_load()

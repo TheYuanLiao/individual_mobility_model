@@ -28,7 +28,7 @@ class GroundTruthLoader:
         self.zones_pop = None
         self.bbox = None
 
-    def zones(self):
+    def load_zones(self):
         _zones = gpd.read_file(ROOT_dir + '/dbs/saopaulo/zones/zones.shp')
         self.zones = _zones.rename(columns={"NumeroZona": "zone"})[['zone', 'geometry']]
 
@@ -43,7 +43,7 @@ class GroundTruthLoader:
     def boundary(self):
         self.boundary = self.zones.assign(a=1).dissolve(by='a').simplify(tolerance=0.2).to_crs("EPSG:4326")
 
-    def odm(self):
+    def load_odm(self):
         odms = pd.read_excel(ROOT_dir + "/dbs/saopaulo/odm/odm.xlsx", skiprows=7, index_col=0, skipfooter=3).drop(columns="Total")
         assert odms.shape[0] == 517
         assert odms.shape[1] == 517
