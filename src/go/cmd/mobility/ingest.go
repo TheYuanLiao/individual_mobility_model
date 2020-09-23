@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/TheYuanLiao/individual-mobility-model/src/go/internal/ingest"
-	"github.com/TheYuanLiao/individual-mobility-model/src/go/internal/repository"
+	"github.com/ericwenn/mscthesis/src/go/internal/ingest"
+	"github.com/ericwenn/mscthesis/src/go/internal/repository"
 	"github.com/urfave/cli/v2"
 )
 

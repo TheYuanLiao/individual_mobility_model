@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/TheYuanLiao/individual-mobility-model/src/go/internal/bounds"
-	"github.com/TheYuanLiao/individual-mobility-model/src/go/internal/repository"
+	"github.com/ericwenn/mscthesis/src/go/internal/bounds"
+	"github.com/ericwenn/mscthesis/src/go/internal/repository"
 	"github.com/urfave/cli/v2"
 	"strings"
 	"os"

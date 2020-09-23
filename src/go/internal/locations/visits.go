@@ -3,7 +3,7 @@ package locations
 import (
 	"sort"
 
-	"github.com/TheYuanLiao/individual-mobility-model/src/go/internal/repository"
+	"github.com/ericwenn/mscthesis/src/go/internal/repository"
 	cluster "github.com/smira/go-point-clustering"
 )
 

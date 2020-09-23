@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/TheYuanLiao/individual-mobility-model/src/go/internal/locations"
-	"github.com/TheYuanLiao/individual-mobility-model/src/go/internal/repository"
+	"github.com/ericwenn/mscthesis/src/go/internal/locations"
+	"github.com/ericwenn/mscthesis/src/go/internal/repository"
 	"github.com/urfave/cli/v2"
 )
 
