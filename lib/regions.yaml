@@ -1,0 +1,15 @@
+# Regions for the application of the proposed model
+#
+# Each region contains its file paths and main info such as population.
+
+australia:
+  metric_epsg: EPSG:8058
+  zones_path: /dbs/australia/zones/zones.shp
+  zone_id: SA3_CODE16
+  zones_loader: 1
+
+austria:
+  metric_epsg: EPSG:4326
+  zones_path: /dbs/austria/zones/gadm36_AUT_3.shp
+  zone_id: CC_3
+  zones_loader: 1

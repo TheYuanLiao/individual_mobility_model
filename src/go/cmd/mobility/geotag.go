@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/bradfitz/latlong"
-	"github.com/ericwenn/mscthesis/src/go/internal/repository"
+	"github.com/TheYuanLiao/individual-mobility-model/src/go/internal/repository"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/ugjka/go-tz.v2/tz"
 )

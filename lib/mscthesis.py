@@ -309,7 +309,7 @@ def trips_from_geotweets_morning_infer(df):
 
 
 def tweets_from_sqlite(db):
-    conn = sqlite3.connect('../../dbs/' + db)
+    conn = sqlite3.connect(db)
     df_raw = pd.read_sql_query("SELECT * FROM geo_tweet order by user_id", con=conn)
     return df_raw.rename(columns={
         'tweet_id': 'tweetid',

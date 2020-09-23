@@ -21,6 +21,7 @@ import lib.gs_model as gs_model
 import time
 import json
 
+
 class RegionParaGenerate:
     def __init__(self, res=None, region=None, rg=None, visits=None):
         self.res = res
