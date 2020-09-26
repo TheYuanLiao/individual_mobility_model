@@ -16,15 +16,15 @@ def get_repo_root():
 ROOT_dir = get_repo_root()
 
 shps = {
-    "national": ROOT_dir + "/dbs/sampers/national/region.shp",
-    "west": ROOT_dir + "/dbs/sampers/west/region.shp",
-    "east": ROOT_dir + "/dbs/sampers/east/region.shp",
+    "national": ROOT_dir + "/dbs/sweden/sampers/national/region.shp",
+    "west": ROOT_dir + "/dbs/sweden/sampers/west/region.shp",
+    "east": ROOT_dir + "/dbs/sweden/sampers/east/region.shp",
 }
 
 odms = {
-    "national": ROOT_dir + "/dbs/sampers/national/trips.csv",
-    "west":  ROOT_dir + "/dbs/sampers/west/trips.csv",
-    "east": ROOT_dir + "/dbs/sampers/east/trips.csv",
+    "national": ROOT_dir + "/dbs/sweden/sampers/national/trips.csv",
+    "west":  ROOT_dir + "/dbs/sweden/sampers/west/trips.csv",
+    "east": ROOT_dir + "/dbs/sweden/sampers/east/trips.csv",
 }
 
 bbox = {

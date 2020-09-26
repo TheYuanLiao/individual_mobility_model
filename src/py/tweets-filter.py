@@ -1,21 +1,26 @@
 import os
+import sys
 import subprocess
 import yaml
 import time
 import pandas as pd
 import geopandas as gpd
-import lib.mscthesis as mscthesis
-
+import multiprocessing as mp
 
 def get_repo_root():
     """Get the root directory of the repo."""
-    dir_in_repo = os.path.dirname(os.path.abspath('__file__')) # os.getcwd()
+    dir_in_repo = os.path.dirname(os.path.abspath('__file__'))
     return subprocess.check_output('git rev-parse --show-toplevel'.split(),
                                    cwd=dir_in_repo,
                                    universal_newlines=True).rstrip()
 
 
 ROOT_dir = get_repo_root()
+sys.path.append(ROOT_dir)
+sys.path.insert(0, ROOT_dir + '/lib')
+
+import lib.mscthesis as mscthesis
+
 
 with open(ROOT_dir + '/lib/regions.yaml') as f:
     region_manager = yaml.load(f, Loader=yaml.FullLoader)
@@ -119,21 +124,31 @@ class TweetsFilter:
             self.homelocations[['latitude', 'longitude']].to_csv(self.csv_homelocations)
 
 
-if __name__ == '__main__':
-    region = 'austria'
+def region_proc(region=None):
     # Loading zones
     start_time = time.time()
     tl = TweetsFilter(region=region)
     tl.zones_boundary_load()
-    print(f"{region}: zone loading is done with the elapsed time was %g seconds" % (time.time() - start_time))
+    print(f"{region}: zone loading done in %g seconds" % (time.time() - start_time))
 
     # Filtering geotweets - 1
     start_time = time.time()
     tl.tweets_filter_1()
-    print(f"{region}: geotweets filtering 1 is done with the elapsed time was %g seconds" % (time.time() - start_time))
+    print(f"{region}: geotweets filtering 1 done in %g seconds" % (time.time() - start_time))
 
     # Filtering geotweets - 2
     start_time = time.time()
     tl.tweets_filter_2()
-    print(f"{region}: geotweets filtering 2 is done with the elapsed time was %g seconds" % (time.time() - start_time))
+    print(f"{region}: geotweets filtering 2 done in %g seconds" % (time.time() - start_time))
     tl.tweets_save()
+
+
+if __name__ == '__main__':
+    region_list = ['sweden', 'netherlands', 'saopaulo', 'australia', 'austria', 'barcelona',
+                   'capetown', 'cebu', 'egypt', 'guadalajara', 'jakarta',
+                   'johannesburg', 'kualalumpur', 'lagos', 'madrid', 'manila', 'mexicocity', 'moscow', 'nairobi',
+                   'rio', 'saudiarabia', 'stpertersburg', 'surabaya']
+    # parallelize the processing of geotagged tweets of multiple regions
+    pool = mp.Pool(mp.cpu_count() - 1)
+    pool.starmap(region_proc, [(r, ) for r in region_list])
+    pool.close()

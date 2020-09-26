@@ -5,11 +5,139 @@
 australia:
   metric_epsg: EPSG:8058
   zones_path: /dbs/australia/zones/zones.shp
+  source_path: E:/Top_Users_Timelines/Australia_timelines.sqlite3
   zone_id: SA3_CODE16
   zones_loader: 1
 
 austria:
   metric_epsg: EPSG:4326
   zones_path: /dbs/austria/zones/gadm36_AUT_3.shp
+  source_path: E:/Top_Users_Timelines/Austria_timelines.sqlite3
   zone_id: CC_3
+  zones_loader: 1
+
+barcelona:
+  metric_epsg: EPSG:4326
+  zones_path: /dbs/barcelona/zones/gadm36_ESP_4.shp
+  source_path: E:/Top_Users_Timelines/Barcelona_timelines.sqlite3
+  zone_id: CC_4
+  zones_loader: 1
+
+capetown:
+  metric_epsg: EPSG:4326
+  zones_path: /dbs/capetown/zones/zones.shp
+  source_path: E:/Top_Users_Timelines/Cape_town_timelines.sqlite3
+  zone_id: NAME_4
+  zones_loader: 1
+
+cebu:
+  metric_epsg: EPSG:4326
+  zones_path: /dbs/cebu/zones/zones.shp
+  source_path: E:/Top_Users_Timelines/Cebu_timelines.sqlite3
+  zone_id: ID_3
+  zones_loader: 1
+
+egypt:
+  metric_epsg: EPSG:4326
+  zones_path: /dbs/egypt/zones/zones.shp
+  source_path: E:/Top_Users_Timelines/Egypt_timelines.sqlite3
+  zone_id: zone
+  zones_loader: 1
+
+guadalajara:
+  metric_epsg: EPSG:4326
+  zones_path: /dbs/guadalajara/zones/zones.shp
+  source_path: E:/Top_Users_Timelines/Guadalajara_timelines.sqlite3
+  zone_id: CC_2
+  zones_loader: 1
+
+jakarta:
+  metric_epsg: EPSG:4326
+  zones_path: /dbs/jakarta/zones/zones.shp
+  source_path: E:/Top_Users_Timelines/Jakarta_timelines.sqlite3
+  zone_id: zone
+  zones_loader: 1
+
+johannesburg:
+  metric_epsg: EPSG:4326
+  zones_path: /dbs/johannesburg/zones/zones.shp
+  source_path: E:/Top_Users_Timelines/Johannesburg_timelines.sqlite3
+  zone_id: NAME_4
+  zones_loader: 1
+
+kualalumpur:
+  metric_epsg: EPSG:4326
+  zones_path: /dbs/kualalumpur/zones/zones.shp
+  source_path: E:/Top_Users_Timelines/Kuala_Lumpur_timelines.sqlite3
+  zone_id: CC_2
+  zones_loader: 1
+
+lagos:
+  metric_epsg: EPSG:4326
+  zones_path: /dbs/lagos/zones/zones.shp
+  source_path: E:/Top_Users_Timelines/Lagos_timelines.sqlite3
+  zone_id: CC_2
+  zones_loader: 1
+
+madrid:
+  metric_epsg: EPSG:25830
+  zones_path: /dbs/madrid/zones/zones.shp
+  source_path: E:/Top_Users_Timelines/Madrid_timelines.sqlite3
+  zone_id: OBJECTID
+  zones_loader: 1
+
+manila:
+  metric_epsg: EPSG:4326
+  zones_path: /dbs/manila/zones/zones.shp
+  source_path: E:/Top_Users_Timelines/Manila_timelines.sqlite3
+  zone_id: ID_3
+  zones_loader: 1
+
+mexicocity:
+  metric_epsg: EPSG:4326
+  zones_path: /dbs/mexicocity/zones/zones.shp
+  source_path: E:/Top_Users_Timelines/Mexico_city_timelines.sqlite3
+  zone_id: CC_2
+  zones_loader: 1
+
+moscow:
+  metric_epsg: EPSG:4326
+  zones_path: /dbs/moscow/zones/zones.shp
+  source_path: E:/Top_Users_Timelines/Moscow_timelines.sqlite3
+  zone_id: zone
+  zones_loader: 1
+
+nairobi:
+  metric_epsg: EPSG:4326
+  zones_path: /dbs/nairobi/zones/zones.shp
+  source_path: E:/Top_Users_Timelines/Nairobi_timelines.sqlite3
+  zone_id: CC_3
+  zones_loader: 1
+
+rio:
+  metric_epsg: EPSG:4326
+  zones_path: /dbs/rio/zones/zones.shp
+  source_path: E:/Top_Users_Timelines/Rio_de_Janeiro_timelines.sqlite3
+  zone_id: CC_3
+  zones_loader: 1
+
+saudiarabia:
+  metric_epsg: EPSG:4326
+  zones_path: /dbs/saudiarabia/zones/gadm36_SAU_1.shp
+  source_path: E:/Top_Users_Timelines/Saudi_Arabia_timelines.sqlite3
+  zone_id: CC_1
+  zones_loader: 1
+
+stpertersburg:
+  metric_epsg: EPSG:4326
+  zones_path: /dbs/stpertersburg/zones/zones.shp
+  source_path: E:/Top_Users_Timelines/St_Petersburg_timelines.sqlite3
+  zone_id: zone
+  zones_loader: 1
+
+surabaya:
+  metric_epsg: EPSG:4326
+  zones_path: /dbs/surabaya/zones/zones.shp
+  source_path: E:/Top_Users_Timelines/Surabaya_timelines.sqlite3
+  zone_id: zone
   zones_loader: 1

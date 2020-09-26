@@ -22,7 +22,7 @@ countries = countries_wgs.to_crs("EPSG:4326") # 3035
 sweden = countries[countries['name'] == "Sweden"]
 netherlands = countries[countries['name'] == "Netherlands"]
 
-counties = geopandas.read_file(ROOT_dir + "/dbs/alla_lan/alla_lan.shp").to_crs("EPSG:3035")
+counties = geopandas.read_file(ROOT_dir + "/dbs/sweden/alla_lan/alla_lan.shp").to_crs("EPSG:3035")
 gothenburg = counties[counties['ID'] == "14"]
 stockholm = counties[(counties['ID'] == "01") | (counties['ID'] == '04') | (counties['ID'] == '03')]
 

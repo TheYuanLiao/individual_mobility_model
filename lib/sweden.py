@@ -19,7 +19,7 @@ ROOT_dir = get_repo_root()
 class GeoInfo:
     def __init__(self):
         self.metric_epsg = "EPSG:3035"
-        self.counties = gpd.read_file(ROOT_dir + '/dbs/alla_lan/alla_lan.shp')
+        self.counties = gpd.read_file(ROOT_dir + '/dbs/sweden/alla_lan/alla_lan.shp')
         self.boundary = self.counties.assign(a=1).dissolve(by='a').simplify(tolerance=0.2).to_crs("EPSG:4326")
 
 
