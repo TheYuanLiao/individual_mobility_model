@@ -72,9 +72,10 @@ def region_visits_proc(region=None, runid=1):
 
 
 if __name__ == '__main__':
-    region_list = ['australia', 'austria', 'barcelona', 'capetown', 'cebu', 'egypt', 'guadalajara', 'jakarta',
-                   'johannesburg', 'kualalumpur', 'lagos', 'madrid', 'manila', 'mexicocity', 'moscow', 'nairobi',
-                   'rio', 'saudiarabia', 'stpertersburg', 'surabaya']
+    # region_list = ['australia', 'austria', 'barcelona', 'capetown', 'cebu', 'egypt', 'guadalajara', 'jakarta',
+    #                'johannesburg', 'kualalumpur', 'lagos', 'madrid', 'manila', 'mexicocity', 'moscow', 'nairobi',
+    #                'rio', 'saudiarabia', 'stpertersburg', 'surabaya']
+    region_list = ['netherlands', 'sweden', 'saopaulo']
     # parallelize the processing of geotagged tweets of multiple regions
     pool = mp.Pool(mp.cpu_count())
     pool.starmap(region_visits_proc, [(r, 1, ) for r in region_list])

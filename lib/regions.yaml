@@ -3,6 +3,31 @@
 # cebu in gdp_capita of Philipines
 # Each region contains its file paths and main info such as population.
 
+
+sweden:
+  name: Sweden
+  country: Sweden
+  metric_epsg: EPSG:3035
+  zones_path: /dbs/sweden/alla_lan/alla_lan.shp
+  source_path: E:/Top_Users_Timelines/Sweden_timelines.sqlite3
+  zone_id: NA
+  zones_loader: 1
+  pop: 10.23
+  pop_country: 10.23
+  gdp_capita: 54.61
+
+netherlands:
+  name: The Netherlands
+  country: The Netherlands
+  metric_epsg: EPSG:28992
+  zones_path: /dbs/netherlands/provinces.shp
+  source_path: E:/Top_Users_Timelines/Netherlands_timelines.sqlite3
+  zone_id: NA
+  zones_loader: 1
+  pop: 17.28
+  pop_country: 17.28
+  gdp_capita: 53.02
+
 australia:
   name: Australia
   country: Australia
@@ -230,6 +255,18 @@ rio:
   pop: 6.32
   pop_country: 209.5
   gdp_capita: 11.02
+
+saopaulo:
+  name: São Paulo, Brazil
+  country: Brazil
+  metric_epsg: EPSG:22523
+  zones_path: /dbs/saopaulo/zones/zones.shp
+  source_path: E:/Top_Users_Timelines/Sao_Paulo_timelines.sqlite3
+  zone_id: NumeroZona
+  zones_loader: 1
+  pop: 12.18
+  pop_country: 209.5
+  gdp_capita: 27.13
 
 saudiarabia:
   name: Saudi Arabia

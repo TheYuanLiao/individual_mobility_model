@@ -8,6 +8,8 @@ library(ggplot2)
 library(ggrepel)
 library(ggpubr)
 
+df <- read.csv('results/multi-region_stats.csv', encoding = "UTF-8")
+
 theme_set(
   theme_minimal() +
     theme(legend.position = "top",
@@ -19,9 +21,8 @@ gg_color_hue <- function(n) {
   hcl(h = hues, l = 65, c = 100)[1:n]
 }
 
-cols <- gg_color_hue(14)
-
-df <- read.csv('results/multi-region_stats.csv')
+cols <- gg_color_hue(16)
+names(cols) <- unique(df$country)
 
 g1 <- ggplot(df, aes(x = gdp_capita, y = pkt_yr_capita)) +
   labs(x='GDP (kUSD/capita/yr), nominal',
@@ -32,6 +33,7 @@ g1 <- ggplot(df, aes(x = gdp_capita, y = pkt_yr_capita)) +
   scale_color_manual(values = cols, name = 'Country')
 
 df2 <- filter(df, !is.na(pkt_yr_capita_gt))
+cols2 <- cols[df2$country]
 
 g2 <- ggplot(df2, aes(x = pkt_yr_capita, y = pkt_yr_capita_gt)) +
   labs(y='Inland PKT by iTEM (million km/capita/yr)',
@@ -39,7 +41,7 @@ g2 <- ggplot(df2, aes(x = pkt_yr_capita, y = pkt_yr_capita_gt)) +
   geom_label_repel(aes(label = region_name,  color = country),
                    alpha = 0.75, size = 2.5, label.size = NA) +
   geom_point(aes(color = country), size=3) +
-  scale_color_manual(values = cols, name = 'Country')
+  scale_color_manual(values = cols2, name = 'Country')
 
 w <- 3 * 2
 h <- 3

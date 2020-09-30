@@ -85,9 +85,7 @@ class MultiRegionParaGenerate:
 
 
 if __name__ == '__main__':
-    region_list = ['australia', 'austria', 'barcelona', 'capetown', 'cebu', 'egypt', 'guadalajara', 'jakarta',
-                   'johannesburg', 'kualalumpur', 'lagos', 'madrid', 'manila', 'mexicocity', 'moscow', 'nairobi',
-                   'rio', 'saudiarabia', 'stpertersburg', 'surabaya']
+    region_list = ['netherlands', 'sweden', 'saopaulo']
     p, gamma, beta = 0.8, 0.03, 0.3
     runid = 1
     for region2compute in region_list:
