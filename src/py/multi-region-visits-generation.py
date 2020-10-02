@@ -4,7 +4,9 @@ import subprocess
 import json
 import time
 import pandas as pd
+import geopandas as gpd
 import multiprocessing as mp
+import yaml
 
 
 def get_repo_root():
@@ -18,6 +20,9 @@ def get_repo_root():
 ROOT_dir = get_repo_root()
 sys.path.append(ROOT_dir)
 sys.path.insert(0, ROOT_dir + '/lib')
+
+with open(ROOT_dir + '/lib/regions.yaml') as f:
+    region_manager = yaml.load(f, Loader=yaml.FullLoader)
 
 import lib.mscthesis as mscthesis
 import lib.models as models
@@ -36,6 +41,25 @@ class MultiRegionParaGenerate:
             raise Exception("The geotweets of the input region do not exist.")
         self.geotweets = None
         self.visits = None
+        # Load region data
+        self.region_info = region_manager[self.region]
+        self.zones = None
+        self.boundary = None
+
+    def country_zones_boundary_load(self):
+        # The boundary to use when removing users based on location.
+        zones_loader = self.region_info['zones_loader']
+        metric_epsg = self.region_info['country_metric_epsg']
+        zone_id = self.region_info['country_zone_id']
+        zones_path = self.region_info['country_zones_path']
+
+        if zones_loader == 1:
+            zones = gpd.read_file(ROOT_dir + zones_path)
+            zones = zones.loc[zones[zone_id].notnull()]
+            zones = zones.rename(columns={zone_id: "zone"})
+            zones.zone = zones.zone.astype(int)
+            self.zones = zones.loc[zones.geometry.notnull()].to_crs(metric_epsg)
+            self.boundary = self.zones.assign(a=1).dissolve(by='a').simplify(tolerance=0.2).to_crs("EPSG:4326")
 
     def load_geotweets(self, only_weekday=True):
         geotweets = mscthesis.read_geotweets_raw(self.path2geotweets).set_index('userid')
@@ -71,12 +95,19 @@ class MultiRegionParaGenerate:
     def visits_gen(self, p=None, gamma=None, beta=None, runid=None):
         # parallelize the generation of visits over days
         pool = mp.Pool(mp.cpu_count())
-        tweets = self.geotweets
         visits_list = pool.starmap(self.visits_gen_chunk,
                                    [(p, gamma, beta, x) for x in [7] * 20])
-        visits_total = pd.concat(visits_list).set_index('userid')
+        visits_total = pd.concat(visits_list).reset_index(drop=True)
         pool.close()
-        self.visits = visits_total
+        visits_total_gpd = gpd.GeoDataFrame(
+            visits_total,
+            crs='EPSG:4326',
+            geometry=gpd.points_from_xy(visits_total['longitude'], visits_total['latitude'])
+        )
+        visits_total_inland = gpd.clip(visits_total_gpd, self.boundary.convex_hull)
+        visits_total.loc[visits_total.index.isin(visits_total_inland.index), 'dom'] = 1
+        visits_total.loc[~visits_total.index.isin(visits_total_inland.index), 'dom'] = 0
+        self.visits = visits_total.set_index('userid')
         if not os.path.exists(self.path2visits + f'visits_{runid}.csv'):
             self.visits.to_csv(self.path2visits + f'visits_{runid}.csv')
         with open(self.path2visits + 'paras.txt', 'a') as outfile:
@@ -85,14 +116,22 @@ class MultiRegionParaGenerate:
 
 
 if __name__ == '__main__':
-    region_list = ['netherlands', 'sweden', 'saopaulo']
-    p, gamma, beta = 0.8, 0.03, 0.3
-    runid = 1
+    region_list = ['saopaulo', 'australia', 'austria', 'barcelona', 'sweden', 'netherlands', 'capetown',
+                   'cebu', 'egypt', 'guadalajara', 'jakarta', 'johannesburg', 'kualalumpur',
+                   'lagos', 'madrid', 'manila', 'mexicocity', 'moscow', 'nairobi',
+                   'rio', 'saudiarabia', 'stpertersburg', 'surabaya']
+    p, gamma, beta = 0.86, 0.05, 0.31
+    runid = 2
     for region2compute in region_list:
         # Start timing the code
         start_time = time.time()
         # prepare region data by initiating the class
+        print(f'{region2compute} started...')
         g = MultiRegionParaGenerate(region=region2compute)
+        print('Loading geotagged tweets...')
         g.load_geotweets()
+        print('Loading zones to get boundary...')
+        g.country_zones_boundary_load()
+        print('Generating visits...')
         g.visits_gen(p=p, gamma=gamma, beta=beta, runid=runid)
         print(region2compute, "is done. Elapsed time was %g seconds" % (time.time() - start_time))
