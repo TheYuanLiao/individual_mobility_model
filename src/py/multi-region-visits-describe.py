@@ -49,11 +49,16 @@ class MultiRegionVisitsDesc:
                                                 data2[:1].latitude.values.reshape(1, 1)))
         data2.loc[:, 'longitude_d'] = np.vstack((data2[1:].longitude.values.reshape(len(data2) - 1, 1),
                                                  data2[:1].longitude.values.reshape(1, 1)))
+        data2.loc[:, 'dom_d'] = np.vstack((data2[1:].dom.values.reshape(len(data2) - 1, 1),
+                                           data2[:1].dom.values.reshape(1, 1)))
         data2.loc[:, 'distance'] = data2.apply(
             lambda row: mscthesis.haversine_distance(row['latitude'], row['longitude'],
                                                      row['latitude_d'], row['longitude_d']), axis=1)
+        data2.loc[:, 'inland'] = data2.apply(lambda row: 1 if (row['dom'] == 1) & (row['dom_d'] == 1) else 0, axis=1)
         return pd.Series({'pkt': data2['distance'].sum(),
-                          'num_trip': len(data2)})
+                          'num_trip': len(data2),
+                          'pkt_inland': data2.loc[data2['inland'] == 1, 'distance'].sum(),
+                          'num_trip_inland': len(data2.loc[data2['inland'] == 1, :])})
 
     def load_visits_preprocess(self):
         df_v = pd.read_csv(self.path2visits)
@@ -65,18 +70,19 @@ class MultiRegionVisitsDesc:
         self.visits_stats.to_csv(self.path2visits_stats)
 
 
-def region_visits_proc(region=None, runid=1):
+def region_visits_proc(region=None, runid=None):
     rg = MultiRegionVisitsDesc(region=region, runid=runid)
     rg.load_visits_preprocess()
     rg.visits_desc_compute()
 
 
 if __name__ == '__main__':
-    # region_list = ['australia', 'austria', 'barcelona', 'capetown', 'cebu', 'egypt', 'guadalajara', 'jakarta',
-    #                'johannesburg', 'kualalumpur', 'lagos', 'madrid', 'manila', 'mexicocity', 'moscow', 'nairobi',
-    #                'rio', 'saudiarabia', 'stpertersburg', 'surabaya']
-    region_list = ['netherlands', 'sweden', 'saopaulo']
+    region_list = ['saopaulo', 'australia', 'austria', 'barcelona', 'sweden', 'netherlands', 'capetown',
+                   'cebu', 'egypt', 'guadalajara', 'jakarta', 'johannesburg', 'kualalumpur',
+                   'lagos', 'madrid', 'manila', 'mexicocity', 'moscow', 'nairobi',
+                   'rio', 'saudiarabia', 'stpertersburg', 'surabaya']
+    runid = 2
     # parallelize the processing of geotagged tweets of multiple regions
     pool = mp.Pool(mp.cpu_count())
-    pool.starmap(region_visits_proc, [(r, 1, ) for r in region_list])
+    pool.starmap(region_visits_proc, [(r, runid, ) for r in region_list])
     pool.close()
