@@ -1,16 +1,17 @@
 # Title     : Visualize the multi-region results
 # Objective : PKT vs GDP/capita
 # Created by: Yuan Liao
-# Created on: 2020-09-28
+# Created on: 2020-10-18
 
 library(dplyr)
 library(ggplot2)
 library(ggrepel)
 library(ggpubr)
 
-df <- read.csv('results/multi-region_stats_rid_2.csv', encoding = "UTF-8")
-df <- df %>%
-  mutate(outland = pkt_yr_capita - pkt_inland_yr_capita)
+# Domestic trips
+df_dom <- read.csv('results/multi-region_stats_rid_3.csv', encoding = "UTF-8")
+df_dom <- df_dom %>%
+  mutate(pkt_inland_yr_capita = pkt_inland_yr_capita * 1000)
 
 theme_set(
   theme_minimal() +
@@ -26,32 +27,36 @@ gg_color_hue <- function(n) {
 cols <- gg_color_hue(16)
 names(cols) <- unique(df$country)
 
-g1 <- ggplot(df, aes(x = gdp_capita, y = pkt_yr_capita)) +
+g1 <- ggplot(df_dom, aes(x = gdp_capita, y = pkt_inland_yr_capita)) +
   labs(x='GDP (kUSD/capita/yr), nominal',
-       y='Total PKT (million km/capita/yr), inland + outland') +
+       y='Domestic PKT (1000 km/capita/yr)') +
   geom_label_repel(aes(label = region_name,  color = country),
                    alpha = 0.75, size = 2.5, label.size = NA) +
   geom_point(aes(color = country), size=3) +
   scale_color_manual(values = cols, name = 'Country') +
-  geom_smooth(method=lm, aes(x = gdp_capita, y = pkt_yr_capita), color = 'gray', size = 0.05, alpha = 0.05) +
-  # Add correlation coefficient
-  stat_cor(method = "pearson", color='gray')
+  geom_smooth(method = "lm", formula = y ~ log(x),
+              se = TRUE, color='gray', size = 0.05, alpha = 0.05)
 
-g2 <- ggplot(df, aes(x = gdp_capita, y = outland)) +
-  labs(y='Outland PKT (million km/capita/yr)',
-       x='GDP (kUSD/capita/yr), nominal') +
+# International trips
+df_ab <- read.csv('results/multi-region_stats_rid_2.csv', encoding = "UTF-8")
+df_ab <- df_ab %>%
+  mutate(outland = (pkt_yr_capita - pkt_inland_yr_capita) * 1000)
+
+g2 <- ggplot(df_ab, aes(x = gdp_capita, y = outland)) +
+  labs(x='GDP (kUSD/capita/yr), nominal',
+       y='International PKT (1000 km/capita/yr)') +
   geom_label_repel(aes(label = region_name,  color = country),
                    alpha = 0.75, size = 2.5, label.size = NA) +
   geom_point(aes(color = country), size=3) +
   scale_color_manual(values = cols, name = 'Country') +
   geom_smooth(method=lm, aes(x = gdp_capita, y = outland), color = 'gray', size = 0.05, alpha = 0.05) +
   # Add correlation coefficient
-  stat_cor(method = "pearson", color='gray') # , label.x = 44, label.y = 0.55
+  stat_cor(method = "pearson", color='gray')
 
 w <- 3 * 2
 h <- 3
 G <- ggarrange(g1, g2,
                ncol = 2, nrow = 1,
                common.legend = TRUE, legend="top")
-ggsave(filename = "figures/multi-region-pkt-vs-gdp.png", plot=G,
+ggsave(filename = "figures/multi-region-pkt-vs-gdp-inland-outland.png", plot=G,
        width = w*2, height = h*2, unit = "in", dpi = 300)

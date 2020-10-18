@@ -8,7 +8,7 @@ library(ggplot2)
 library(ggrepel)
 library(ggpubr)
 
-df <- read.csv('results/multi-region_stats.csv', encoding = "UTF-8")
+df <- read.csv('results/multi-region_stats_rid_3.csv', encoding = "UTF-8")
 
 theme_set(
   theme_minimal() +

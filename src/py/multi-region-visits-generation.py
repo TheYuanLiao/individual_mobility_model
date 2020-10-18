@@ -61,11 +61,21 @@ class MultiRegionParaGenerate:
             self.zones = zones.loc[zones.geometry.notnull()].to_crs(metric_epsg)
             self.boundary = self.zones.assign(a=1).dissolve(by='a').simplify(tolerance=0.2).to_crs("EPSG:4326")
 
-    def load_geotweets(self, only_weekday=True):
-        geotweets = mscthesis.read_geotweets_raw(self.path2geotweets).set_index('userid')
+    def load_geotweets(self, only_weekday=True, only_domestic=False):
+        geotweets = mscthesis.read_geotweets_raw(self.path2geotweets)
         if only_weekday:
             # Only look at weekday trips
             geotweets = geotweets[(geotweets['weekday'] < 6) & (0 < geotweets['weekday'])]
+        # Check if keeps only domestic geotagged tweets
+        if only_domestic:
+            geotweets = gpd.GeoDataFrame(
+                geotweets,
+                crs="EPSG:4326",
+                geometry=gpd.points_from_xy(geotweets.longitude, geotweets.latitude)
+            )
+            geotweets = gpd.clip(geotweets, self.boundary.convex_hull)
+            geotweets.drop(columns=['geometry'], inplace=True)
+        geotweets = geotweets.set_index('userid')
         # Remove users who don't have home visit in geotweets
         home_visits = geotweets.query("label == 'home'").groupby('userid').size()
         geotweets = geotweets.loc[home_visits.index]
@@ -116,22 +126,22 @@ class MultiRegionParaGenerate:
 
 
 if __name__ == '__main__':
-    region_list = ['saopaulo', 'australia', 'austria', 'barcelona', 'sweden', 'netherlands', 'capetown',
+    region_list = ['austria', 'barcelona', 'sweden', 'netherlands', 'capetown', 'saopaulo', 'australia', 
                    'cebu', 'egypt', 'guadalajara', 'jakarta', 'johannesburg', 'kualalumpur',
                    'lagos', 'madrid', 'manila', 'mexicocity', 'moscow', 'nairobi',
                    'rio', 'saudiarabia', 'stpertersburg', 'surabaya']
     p, gamma, beta = 0.86, 0.05, 0.31
-    runid = 2
+    runid = 3
     for region2compute in region_list:
         # Start timing the code
         start_time = time.time()
         # prepare region data by initiating the class
         print(f'{region2compute} started...')
         g = MultiRegionParaGenerate(region=region2compute)
-        print('Loading geotagged tweets...')
-        g.load_geotweets()
         print('Loading zones to get boundary...')
         g.country_zones_boundary_load()
+        print('Loading geotagged tweets...')
+        g.load_geotweets(only_domestic=True)
         print('Generating visits...')
         g.visits_gen(p=p, gamma=gamma, beta=beta, runid=runid)
         print(region2compute, "is done. Elapsed time was %g seconds" % (time.time() - start_time))
