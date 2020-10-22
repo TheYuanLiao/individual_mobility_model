@@ -17,27 +17,15 @@ library(ggsn)
 library(stplanr)
 ```
 
-## 1 Load travel demand
+## 1 Load travel demand and zones
 ```{r load, echo = TRUE}
 df <- read.csv('../../dbs/netherlands_visits_3_examples.csv')
+zones <- st_transform(st_read('../../dbs/netherlands/mobility_data/CBS_PC4_2017_v1.shp'), crs = 4326)
 head(df)
 ```
 
-## 2 Load zones
-The zones look like the below for the entire country of The Netherlands, where the two individuals live in.
-```{r load.geo, echo = FALSE, message=FALSE, warning = FALSE}
-zones <- st_transform(st_read('../../dbs/netherlands/mobility_data/CBS_PC4_2017_v1.shp'), crs = 4326)
-zones %>%
-  leaflet() %>%
-  addTiles(urlTemplate = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png") %>%
-  addPolygons(color = "#444444", weight = 1, smoothFactor = 0.5,
-              opacity = 0.3, fillOpacity = 0.3,
-              fillColor = 'blue',
-              highlightOptions = highlightOptions(color = "white", weight = 2, bringToFront = TRUE))
-```
-
-## 3 Results
-### 3-1 Individual A
+## 2 Results
+### 2-1 Individual A
 ```{r a, echo = TRUE}
 df_a <- df %>%
   select(c('ozone', 'dzone', 'user_763009')) %>%
@@ -57,7 +45,7 @@ l %>%
   )
 ```
 
-### 3-2 Individual B
+### 2-2 Individual B
 ```{r b, echo = TRUE}
 df_b <- df %>%
   select(c('ozone', 'dzone', 'user_767248')) %>%
