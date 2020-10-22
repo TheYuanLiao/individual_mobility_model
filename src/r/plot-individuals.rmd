@@ -1,0 +1,78 @@
+---
+title: "Synthesized travel demand of two Twitter users"
+author: Yuan Liao
+date: 2020-10-22
+output: html_document
+---
+
+This webpage demonstrates the output of two individual Twitter users' synthesized travel demand using an individual based model. The origin-destination matrices, representing their travel demand, are visualized on the map.
+
+```{r libraries, echo = TRUE, message=FALSE, warning = FALSE}
+library(leaflet)
+library(dplyr)
+library(sf)
+library(ggplot2)
+library(ggmap)
+library(ggsn)
+library(stplanr)
+```
+
+## 1 Load travel demand
+```{r load, echo = TRUE}
+df <- read.csv('../../dbs/netherlands_visits_3_examples.csv')
+head(df)
+```
+
+## 2 Load zones
+The zones look like the below for the entire country of The Netherlands, where the two individuals live in.
+```{r load.geo, echo = FALSE, message=FALSE, warning = FALSE}
+zones <- st_transform(st_read('../../dbs/netherlands/mobility_data/CBS_PC4_2017_v1.shp'), crs = 4326)
+zones %>%
+  leaflet() %>%
+  addTiles(urlTemplate = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png") %>%
+  addPolygons(color = "#444444", weight = 1, smoothFactor = 0.5,
+              opacity = 0.3, fillOpacity = 0.3,
+              fillColor = 'blue',
+              highlightOptions = highlightOptions(color = "white", weight = 2, bringToFront = TRUE))
+```
+
+## 3 Results
+### 3-1 Individual A
+```{r a, echo = TRUE}
+df_a <- df %>%
+  select(c('ozone', 'dzone', 'user_763009')) %>%
+  filter(user_763009 != 0 & ozone != dzone) %>%
+  arrange(desc(user_763009))
+
+l <- od2line(flow = df_a, zones = zones)
+pal <- colorNumeric(palette="plasma", domain= c(0.001, 0.002, 0.003, 0.005, 0.008, 0.009, 0.01, 0.04))
+
+l %>%
+  leaflet() %>%
+  addTiles() %>%
+  addPolygons(color=pal(l$user_763009)) %>%
+  addLegend("bottomright", pal = pal, values = ~user_763009,
+    title = "Probability of trip connection",
+    opacity = 0.3
+  )
+```
+
+### 3-2 Individual B
+```{r b, echo = TRUE}
+df_b <- df %>%
+  select(c('ozone', 'dzone', 'user_767248')) %>%
+  filter(user_767248 != 0 & ozone != dzone) %>%
+  arrange(desc(user_767248))
+
+l <- od2line(flow = df_b, zones = zones)
+pal <- colorNumeric(palette="plasma", domain= c(0.001, 0.002, 0.003, 0.005, 0.008, 0.009, 0.017))
+
+l %>%
+  leaflet() %>%
+  addTiles() %>%
+  addPolygons(color=pal(l$user_767248)) %>%
+  addLegend("bottomright", pal = pal, values = ~user_767248,
+    title = "Probability of trip connection",
+    opacity = 0.3
+  )
+```
