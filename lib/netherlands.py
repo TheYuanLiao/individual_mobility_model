@@ -71,10 +71,13 @@ class GroundTruthLoader:
         print(odms.head())
         self.odm = odms / odms.sum()
 
-    def load_odm_visualization(self, mode=None):
+    def load_odm_visualization(self, mode=None, hour=None):
         """
         :param mode: integer
         0- Non-bike, 1- E-bike, 2- Bike, 3- Unknown, 4- All
+
+        :param hour: integer
+        [0, 23]
         """
         if mode is None:
             raise Exception('A mode must be specified.')
@@ -96,16 +99,17 @@ class GroundTruthLoader:
             'HvmFiets': 'mode_bike'
         })
         trips = trips.dropna(subset=['trip_id'])
+        trips = trips.dropna(subset=['origin_time'])
         if mode in [0, 1, 2]:
             trips = trips.loc[trips.mode_bike == mode]
         else:
             trips = trips.loc[trips.mode_bike != 3]
+        if hour in list(range(0, 24)):
+            trips = trips.loc[trips.origin_time == hour]
         trips = trips.groupby(['OPID', 'trip_id']).apply(trip_row)
         trips['origin_zip'] = trips['origin_zip'].astype('int64')
         trips['dest_zip'] = trips['dest_zip'].astype('int64')
         odms = trips.groupby(['origin_zip', 'dest_zip']).sum()['weight_trip']
-        print(odms.head())
         z = self.zones.zone
         odms = odms.reindex(pd.MultiIndex.from_product([z, z]), fill_value=0)
-        print(odms.head())
         self.odm = odms
