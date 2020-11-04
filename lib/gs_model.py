@@ -127,11 +127,11 @@ class RegionDataPrep:
         # Remove users with only one region
         regioncount = geotweets.groupby(['userid', 'region']).size().groupby('userid').size()
         geotweets = geotweets.drop(labels=regioncount[regioncount < 2].index)
-        # Ensure the tweets are sorted chronologically
+        # Ensure the tweets are sorted chronologically and the geometry is dropped
         if type == 'calibration':
-            self.tweets_calibration = geotweets.sort_values(by=['userid', 'createdat'])
+            self.tweets_calibration = geotweets.sort_values(by=['userid', 'createdat']).drop(columns=['geometry'])
         else:
-            self.tweets_validation = geotweets.sort_values(by=['userid', 'createdat'])
+            self.tweets_validation = geotweets.sort_values(by=['userid', 'createdat']).drop(columns=['geometry'])
 
     def kl_baseline_compute(self):
         self.dms = validation.DistanceMetrics().compute(

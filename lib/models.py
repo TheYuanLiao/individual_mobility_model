@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics.pairwise import haversine_distances
 import lib.mscthesis as mscthesis
+import multiprocessing as mp
 
 
 class PreferentialReturn:
@@ -34,6 +35,7 @@ class PreferentialReturn:
 
         self.regions = None
         self.exploration_prob = None
+        self.s = None # number of distinct places
 
         if region_sampling is None:
             region_sampling = RegionTrueProb()
@@ -57,8 +59,12 @@ class PreferentialReturn:
 
         self.regions = tweets.groupby('region').head(1).set_index('region')
 
-        S = self.regions.shape[0]
-        self.exploration_prob = self.p * (S ** -self.gamma)
+        self.s = self.regions.shape[0]
+        self.exploration_prob = self.p * (self.s ** -self.gamma)
+
+    def update_s(self):
+        self.s += 1
+        self.exploration_prob = self.p * (self.s ** -self.gamma)
 
     def next(self, prev):
         """
@@ -77,7 +83,8 @@ class PreferentialReturn:
             prev_lat, prev_lng = prev[1], prev[2]
             bearing, jump_size_m = self.direction_jump_size_sampling.sample()
             lat, lng = latlngshift(prev_lat, prev_lng, jump_size_m, bearing)
-            return ["point", lat, lng, -1]
+            self.update_s()
+            return ["point", lat, lng, max(self.regions.index) + 1]
         else:
             previous_region_idx = None
             if prev[0] == 'region':
@@ -158,67 +165,6 @@ class RegionZipfProb:
         return np.random.choice(
             a=self.region_probs.index,
             p=self.region_probs.values,
-            size=1,
-        )[0]
-
-
-class GroupRegionZipfProb:
-    def __init__(self, zipf=1.2):
-        self.zipf = zipf
-        self.group_probs = None
-        self.region_by_group_probs = None
-        self.regions = None
-
-    def describe(self):
-        return {
-            "name": "GroupRegionZipfProb",
-            "zipf": self.zipf
-        }
-
-    def fit(self, tweets):
-        regions = tweets.reset_index().groupby('region').head(1).set_index('region').sort_index()
-        self.regions = regions
-        gaps = mscthesis.visit_gaps(tweets)
-        t = gaps.groupby(['group_origin', 'group_destination']).size()
-        for g in list(set(t.index.get_level_values(1)) - set(t.index.get_level_values(0))):
-            t.loc[(g, g)] = 1
-        transitions = t.unstack(fill_value=0)
-        group_probs = transitions.div(
-            transitions.sum(axis=1),  # summation of each row
-            axis=0,
-        )
-        self.group_probs = group_probs
-        region_by_group_probs = tweets.groupby(['group', 'region']).size().sort_values(ascending=False)
-        probs = np.power(np.arange(1, region_by_group_probs.shape[0] + 1), -self.zipf)
-        probs = pd.Series(probs / np.sum(probs), index=region_by_group_probs.index).unstack().fillna(0)
-        self.region_by_group_probs = probs.div(
-            probs.sum(axis=1),  # summation of each row
-            axis=0,
-        )
-
-    def sample(self, previous_region_idx=None, previous_point=None):
-        if previous_region_idx is None:
-            distances_km = pd.DataFrame(
-                (6371.0088 * haversine_distances(
-                    np.radians(self.regions[['latitude', 'longitude']]),
-                    Y=np.radians([[previous_point[1], previous_point[2]]]),
-                )),
-                index=self.regions.index,
-                columns=["c"],
-            )
-            prev_group = self.regions.loc[distances_km['c'].idxmin()]['group']
-        else:
-            prev_group = self.regions.loc[previous_region_idx]['group']
-        g_probs = self.group_probs.loc[prev_group]
-        next_group = np.random.choice(
-            a=g_probs.index,
-            p=g_probs.values,
-            size=1,
-        )[0]
-        r_probs = self.region_by_group_probs.loc[next_group]
-        return np.random.choice(
-            a=r_probs.index,
-            p=r_probs.values,
             size=1,
         )[0]
 
@@ -309,62 +255,6 @@ class RegionTransitionZipf:
         )[0]
 
 
-class JumpSizeTrueProb:
-    """
-    A jump size probability sampler that follows the true distribution of observed jump sizes.
-    """
-
-    def __init__(self):
-        self.jump_sizes_km = None
-
-    def describe(self):
-        return {
-            "name": "trueProb",
-        }
-
-    def fit(self, tweets):
-        gaps = mscthesis.gaps(tweets)
-        # Don't use tweets in same region for jump size distribution as they will all be 0.
-        gaps = gaps[gaps['region_origin'] != gaps['region_destination']]
-        lines = gaps[[
-            'latitude_origin', 'longitude_origin',
-            'latitude_destination', 'longitude_destination',
-        ]].values
-        self.jump_sizes_km = [6371.0088 * haversine_distances(
-            X=np.radians([_[:2]]),
-            Y=np.radians([_[2:]]),
-        )[0, 0] for _ in lines]
-
-    def sample(self):
-        km = np.random.choice(self.jump_sizes_km)
-        # should return in meters
-        return km * 1000
-
-
-class DirectionTrueProb:
-    def __init__(self):
-        self.bearings = None
-
-    def describe(self):
-        return {
-            "name": "directionTrueProb",
-        }
-
-    def fit(self, tweets):
-        gaps = mscthesis.gaps(tweets)
-        gaps = gaps[gaps['region_origin'] != gaps['region_destination']]
-        bearings = mscthesis.coordinates_bearing(
-            gaps.latitude_origin.values,
-            gaps.longitude_origin.values,
-            gaps.latitude_destination.values,
-            gaps.longitude_destination.values,
-        )
-        self.bearings = bearings
-
-    def sample(self):
-        return np.random.choice(self.bearings)
-
-
 class JumpSizeDirectionTrueProb:
     """
     Sample from the joint probability distribution of bearing and jump size.
@@ -433,9 +323,9 @@ class Sampler:
             "n_days": self.n_days
         }
 
-    def sample(self, tweets=None):
+    def sample_user(self, tweets=None, uid=None):
         """
-        Samples new tweets for each user in `tweets` for `n_days`.
+        Samples new visits for a given user in `tweets` for `n_days`.
 
         :param tweets:
         pd.DataFrame (userid*, region, label, latitude, longitude, ...rest))
@@ -444,46 +334,57 @@ class Sampler:
         How many days should be sampled.
 
         :return:
-        The sampled tweets for each users
+        The sampled tweets for a given users
         pd.DataFrame (*userid, day, timeslot, kind, latitude, longitude, region)
+        """
+        usamples = []
+        utweets = tweets.loc[uid]
+        # Re-fit the model on this user
+        self.model.fit(utweets)
+
+        # Find home location
+        home = utweets[utweets['label'] == 'home'].iloc[0]
+
+        for day in range(self.n_days):
+            # Every days starts at home location
+            prev = ['region', home.latitude, home.longitude, home.region]
+            usamples.append([uid, day, 0] + prev)
+
+            # For exploration a list ["point", latitude, longitude, new_regionidx]
+            # For return a list ["region", latitude, longitude, region]
+            for timeslot in range(self.daily_trips_sampling.sample()):
+                current = self.model.next(prev)
+                usamples.append([uid, day, (timeslot + 1)] + current)
+                prev = current
+        return pd.DataFrame(
+            usamples,
+            columns=['userid', 'day', 'timeslot', 'kind', 'latitude', 'longitude', 'region'],
+        )
+
+    def sample(self, tweets=None):
+        """
+        Paralleized sampling of new visits for all users in `tweets`.
+
+        :param tweets:
+        pd.DataFrame (userid*, region, label, latitude, longitude, ...rest))
+
+        :return:
+        The sampled tweets for all users
         """
         if tweets is None:
             raise Exception("must set tweets when sampling")
 
-        samples = []
-        n_done = 0
-        for uid in tweets.index.unique():
-            utweets = tweets.loc[uid]
-            # Re-fit the model on this user
-            self.model.fit(utweets)
-
-            # Find home location
-            home = utweets[utweets['label'] == 'home'].iloc[0]
-
-            for day in range(self.n_days):
-                # Every days starts at home location
-                prev = ['region', home.latitude, home.longitude, home.region]
-                samples.append([uid, day, 0] + prev)
-
-                for timeslot in range(self.daily_trips_sampling.sample()):
-                    current = self.model.next(prev)
-                    samples.append([uid, day, (timeslot + 1)] + current)
-                    prev = current
-
-            n_done += 1
-            #if n_done % 250 == 0:
-                #print("done with", n_done)
-        # .set_index('userid')
-        return pd.DataFrame(
-            samples,
-            columns=['userid', 'day', 'timeslot', 'kind', 'latitude', 'longitude', 'region'],
-        )
+        # parallelize the generation of visits over days
+        pool = mp.Pool(mp.cpu_count())
+        samples_list = pool.starmap(self.sample_user,
+                                   [(tweets, uid) for uid in tweets.index.unique()])
+        visits_total = pd.concat(samples_list).set_index('userid')
+        pool.close()
+        return visits_total
 
     def visits(self):
         if self._visits is None:
             geotweets = mscthesis.read_geotweets_raw(self.geotweets_path).set_index('userid')
-
-            # this code should be somewhere else...
             geotweets = geotweets[(geotweets['weekday'] < 6) & (0 < geotweets['weekday'])]
             home_visits = geotweets.query("label == 'home'").groupby('userid').size()
             geotweets = geotweets.loc[home_visits.index]

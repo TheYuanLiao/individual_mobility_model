@@ -1,8 +1,6 @@
 import sys
 import subprocess
 import os
-import multiprocessing as mp
-import pandas as pd
 
 
 def get_repo_root():
@@ -34,7 +32,7 @@ class RegionParaSearch:
         self.visits = visits
 
     def region_data_load(self):
-        self.res = ROOT_dir + '/results/gridsearch-n_' + self.region + '.txt'
+        self.res = ROOT_dir + '/results/grid-search/gridsearch-n_' + self.region + '.txt'
         rg_ = gs_model.RegionDataPrep(region=self.region)
         rg_.load_zones_odm()
         rg_.load_geotweets()
@@ -46,12 +44,16 @@ class RegionParaSearch:
                                                 distance_quantiles=self.rg.distance_quantiles, gt_dms=self.rg.dms)
 
     def gs_para(self, p=None, gamma=None, beta=None):
-        # parallelize the generation of visits over days
-        pool = mp.Pool(mp.cpu_count())
-        visits_list = pool.starmap(self.visits.visits_gen_chunk,
-                                   [(self.rg.tweets_calibration, p, gamma, beta, x) for x in [7] * 20])
-        visits_total = pd.concat(visits_list).set_index('userid')
-        pool.close()
+        # userid as index for visits_total
+        visits_total = self.visits.visits_gen_chunk(self.rg.tweets_calibration, p, gamma, beta, days=140)
+
+        # # parallelize the generation of visits over days
+        # pool = mp.Pool(mp.cpu_count())
+        # visits_list = pool.starmap(self.visits.visits_gen_chunk,
+        #                            [(self.rg.tweets_calibration, p, gamma, beta, x) for x in [7] * 20])
+        # visits_total = pd.concat(visits_list).set_index('userid')
+        # pool.close()
+
         print('Visits generated:', len(visits_total))
         _, divergence_measure = self.visits.visits2measure(visits=visits_total, home_locations=self.rg.home_locations)
         # append the result to the gridsearch file
@@ -83,7 +85,7 @@ if __name__ == '__main__':
             random_state=98,
         )
 
-        logger = JSONLogger(path=ROOT_dir + "/results/logs_" + gs.region + ".json")
+        logger = JSONLogger(path=ROOT_dir + "/results/grid-search/logs_" + gs.region + ".json")
         optimizer.subscribe(Events.OPTIMIZATION_STEP, logger)
         optimizer.maximize(
             init_points=8,
