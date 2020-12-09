@@ -16,7 +16,7 @@ names(title_region) <- c('sweden-west', 'sweden-east', 'netherlands', 'saopaulo'
 lst <- readLines('results/summary.txt') %>% lapply(fromJSON)
 df <- bind_rows(lst)
 
-rs_path <- 'results/'
+rs_path <- 'results/grid-search/'
 
 dist_upper <- function(x) {
   x_s <- unlist(strsplit(x, ","))

@@ -49,16 +49,16 @@ class MultiRegionVisitsDesc:
                                                 data2[:1].latitude.values.reshape(1, 1)))
         data2.loc[:, 'longitude_d'] = np.vstack((data2[1:].longitude.values.reshape(len(data2) - 1, 1),
                                                  data2[:1].longitude.values.reshape(1, 1)))
-        data2.loc[:, 'dom_d'] = np.vstack((data2[1:].dom.values.reshape(len(data2) - 1, 1),
-                                           data2[:1].dom.values.reshape(1, 1)))
+        #data2.loc[:, 'dom_d'] = np.vstack((data2[1:].dom.values.reshape(len(data2) - 1, 1),
+        #                                   data2[:1].dom.values.reshape(1, 1)))
         data2.loc[:, 'distance'] = data2.apply(
             lambda row: mscthesis.haversine_distance(row['latitude'], row['longitude'],
                                                      row['latitude_d'], row['longitude_d']), axis=1)
-        data2.loc[:, 'inland'] = data2.apply(lambda row: 1 if (row['dom'] == 1) & (row['dom_d'] == 1) else 0, axis=1)
+        #data2.loc[:, 'inland'] = data2.apply(lambda row: 1 if (row['dom'] == 1) & (row['dom_d'] == 1) else 0, axis=1)
         return pd.Series({'pkt': data2['distance'].sum(),
                           'num_trip': len(data2),
-                          'pkt_inland': data2.loc[data2['inland'] == 1, 'distance'].sum(),
-                          'num_trip_inland': len(data2.loc[data2['inland'] == 1, :])})
+                          'pkt_inland': data2.loc[:, 'distance'].sum(), #data2['inland'] == 1
+                          'num_trip_inland': len(data2)}) #data2['inland'] == 1
 
     def load_visits_preprocess(self):
         df_v = pd.read_csv(self.path2visits)
@@ -81,7 +81,7 @@ if __name__ == '__main__':
                    'cebu', 'egypt', 'guadalajara', 'jakarta', 'johannesburg', 'kualalumpur',
                    'lagos', 'madrid', 'manila', 'mexicocity', 'moscow', 'nairobi',
                    'rio', 'saudiarabia', 'stpertersburg', 'surabaya']
-    runid = 3
+    runid = 4
     # parallelize the processing of geotagged tweets of multiple regions
     pool = mp.Pool(mp.cpu_count())
     pool.starmap(region_visits_proc, [(r, runid, ) for r in region_list])

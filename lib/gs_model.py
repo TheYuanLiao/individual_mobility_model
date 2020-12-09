@@ -160,7 +160,7 @@ class VisitsGeneration:
         self.gt_dms = gt_dms
         self.bbox = bbox
 
-    def visits_gen_chunk(self, geotweets=None, p=None, gamma=None, beta=None, days=None):
+    def visits_gen(self, geotweets=None, p=None, gamma=None, beta=None, days=None):
         visit_factory = models.Sampler(
                             model=models.PreferentialReturn(
                                 p=p,

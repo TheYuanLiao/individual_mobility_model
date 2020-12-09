@@ -45,7 +45,7 @@ class RegionParaSearch:
 
     def gs_para(self, p=None, gamma=None, beta=None):
         # userid as index for visits_total
-        visits_total = self.visits.visits_gen_chunk(self.rg.tweets_calibration, p, gamma, beta, days=140)
+        visits_total = self.visits.visits_gen(self.rg.tweets_calibration, p, gamma, beta, days=140)
 
         # # parallelize the generation of visits over days
         # pool = mp.Pool(mp.cpu_count())

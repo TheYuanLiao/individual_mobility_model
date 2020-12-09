@@ -88,7 +88,7 @@ class MultiRegionParaGenerate:
         # Ensure the tweets are sorted chronologically
         self.geotweets = geotweets.sort_values(by=['userid', 'createdat'])
 
-    def visits_gen_chunk(self, p=None, gamma=None, beta=None, days=None):
+    def visits_gen(self, p=None, gamma=None, beta=None, days=None, runid=None):
         visit_factory = models.Sampler(
             model=models.PreferentialReturn(
                 p=p,
@@ -99,25 +99,17 @@ class MultiRegionParaGenerate:
             daily_trips_sampling=models.NormalDistribution(mean=3.14, std=1.8)
         )
         # Calculate visits
-        visits = visit_factory.sample(self.geotweets)
-        return visits
-
-    def visits_gen(self, p=None, gamma=None, beta=None, runid=None):
-        # parallelize the generation of visits over days
-        pool = mp.Pool(mp.cpu_count())
-        visits_list = pool.starmap(self.visits_gen_chunk,
-                                   [(p, gamma, beta, x) for x in [7] * 20])
-        visits_total = pd.concat(visits_list).reset_index(drop=True)
-        pool.close()
-        visits_total_gpd = gpd.GeoDataFrame(
-            visits_total,
-            crs='EPSG:4326',
-            geometry=gpd.points_from_xy(visits_total['longitude'], visits_total['latitude'])
-        )
-        visits_total_inland = gpd.clip(visits_total_gpd, self.boundary.convex_hull)
-        visits_total.loc[visits_total.index.isin(visits_total_inland.index), 'dom'] = 1
-        visits_total.loc[~visits_total.index.isin(visits_total_inland.index), 'dom'] = 0
-        self.visits = visits_total.set_index('userid')
+        self.visits = visit_factory.sample(self.geotweets)
+        print("Visits generation is done. Now saving...")
+        # # parallelize the generation of visits over days
+        # visits_total_gpd = gpd.GeoDataFrame(
+        #     visits_total,
+        #     crs='EPSG:4326',
+        #     geometry=gpd.points_from_xy(visits_total['longitude'], visits_total['latitude'])
+        # )
+        # visits_total_inland = gpd.clip(visits_total_gpd, self.boundary.convex_hull)
+        # visits_total.loc[visits_total.index.isin(visits_total_inland.index), 'dom'] = 1
+        # visits_total.loc[~visits_total.index.isin(visits_total_inland.index), 'dom'] = 0
         if not os.path.exists(self.path2visits + f'visits_{runid}.csv'):
             self.visits.to_csv(self.path2visits + f'visits_{runid}.csv')
         with open(self.path2visits + 'paras.txt', 'a') as outfile:
@@ -130,8 +122,9 @@ if __name__ == '__main__':
                    'cebu', 'egypt', 'guadalajara', 'jakarta', 'johannesburg', 'kualalumpur',
                    'lagos', 'madrid', 'manila', 'mexicocity', 'moscow', 'nairobi',
                    'rio', 'saudiarabia', 'stpertersburg', 'surabaya']
-    p, gamma, beta = 0.86, 0.05, 0.31
-    runid = 3
+    p, gamma, beta = 0.68, 0.05, 0.55
+    runid = 4
+    days = 260
     for region2compute in region_list:
         # Start timing the code
         start_time = time.time()
@@ -143,5 +136,5 @@ if __name__ == '__main__':
         print('Loading geotagged tweets...')
         g.load_geotweets(only_domestic=True)
         print('Generating visits...')
-        g.visits_gen(p=p, gamma=gamma, beta=beta, runid=runid)
+        g.visits_gen(p=p, gamma=gamma, beta=beta, days=days, runid=runid)
         print(region2compute, "is done. Elapsed time was %g seconds" % (time.time() - start_time))

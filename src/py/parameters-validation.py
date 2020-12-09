@@ -45,23 +45,18 @@ class RegionParaGenerate:
                                                 distance_quantiles=self.rg.distance_quantiles, gt_dms=self.rg.dms)
 
     def visits_gen(self, type='calibration', p=None, gamma=None, beta=None):
-        # parallelize the generation of visits over days
-        pool = mp.Pool(mp.cpu_count())
         if type == 'calibration':
             tweets = self.rg.tweets_calibration
         else:
             tweets = self.rg.tweets_validation
-        visits_list = pool.starmap(self.visits.visits_gen_chunk,
-                                   [(tweets, p, gamma, beta, x) for x in [7] * 20])
-        visits_total = pd.concat(visits_list).set_index('userid')
-        pool.close()
-        visits_total.to_csv(self.res)
+        # userid as index for visits_total
+        visits_total = self.visits.visits_gen(tweets, p, gamma, beta, days=260)
         dms, _ = self.visits.visits2measure(visits=visits_total, home_locations=self.rg.home_locations)
-        dms.to_csv(ROOT_dir + '/results/' + self.region + '_' + type + '_distances.csv')
+        dms.to_csv(ROOT_dir + '/results/grid-search/' + self.region + '_' + type + '_distances.csv')
 
 
 if __name__ == '__main__':
-    file = ROOT_dir + '/results/gridsearch.txt'
+    file = ROOT_dir + '/results/grid-search/gridsearch.txt'
     list_lines = []
     with open(file) as f:
         for jsonObj in f:

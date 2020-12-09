@@ -19,7 +19,7 @@ names(title_region) <- c('sweden-west', 'sweden-east', 'netherlands', 'saopaulo'
 
 for (region in names(title_region)) {
     # Load grid search records
-    lst <- readLines(glue('results/gridsearch-n_{region}.txt')) %>% lapply(fromJSON)
+    lst <- readLines(glue('results/grid-search/gridsearch-n_{region}.txt')) %>% lapply(fromJSON)
     df <- bind_rows(lst)
     para.op <- df[df$kl == min(df$kl), c('p', 'beta', 'gamma', 'kl')]
     # parameter
