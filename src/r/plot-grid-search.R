@@ -14,13 +14,13 @@ library(jsonlite)
 library(viridisLite)
 library(latticeExtra)
 
-title_region <- c('Sweden - West', 'Sweden - East', 'The Netherlands', 'São Paulo, Brazil')
-names(title_region) <- c('sweden-west', 'sweden-east', 'netherlands', 'saopaulo')
+title_region <- c('Sweden', 'The Netherlands', 'São Paulo, Brazil') # 'Sweden - West', 'Sweden - East',
+names(title_region) <- c('sweden', 'netherlands', 'saopaulo') # 'sweden-west', 'sweden-east',
 
-for (region in names(title_region)) {
-    # Load grid search records
+plt.region <- function(region){    # Load grid search records
     lst <- readLines(glue('results/grid-search/gridsearch-n_{region}.txt')) %>% lapply(fromJSON)
     df <- bind_rows(lst)
+    df <- df[df$kl != 999,]
     para.op <- df[df$kl == min(df$kl), c('p', 'beta', 'gamma', 'kl')]
     # parameter
     p <- para.op$p
@@ -65,11 +65,17 @@ for (region in names(title_region)) {
                     col.regions = viridis(100)
     ) + layer_(panel.2dsmoother(..., n = 200))
 
-
-    w <- 3 * 3
-    h <- 3
     G <- ggarrange(g1, g2, g3,
                    ncol = 3, nrow = 1)
-    ggsave(filename = glue("figures/{region}-grid-search.png"), plot=G,
-           width = w*1.5, height = h*1.5, unit = "in", dpi = 300)
+    return(G)
 }
+
+G1 <- plt.region('sweden')
+G2 <- plt.region('netherlands')
+G3 <- plt.region('saopaulo')
+G <- ggarrange(G1, G2, G3, ncol = 1, nrow = 3, labels = c("(a)", "(b)", "(c)"))
+
+w <- 3 * 3
+h <- 3 * 3
+ggsave(filename = "figures/grid-search.png", plot=G,
+           width = w*1.2, height = h*1.2, unit = "in", dpi = 300)

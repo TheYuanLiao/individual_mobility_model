@@ -68,7 +68,7 @@ class RegionParaSearch:
 
 if __name__ == '__main__':
     # ['sweden-west', 'sweden-east', 'netherlands', 'saopaulo', 'sweden-national']
-    for region2search in ['sweden-west', 'sweden-east', 'netherlands', 'saopaulo']:
+    for region2search in ['sweden', 'netherlands', 'saopaulo']:
         # prepare region data by initiating the class
         gs = RegionParaSearch(region=region2search)
         gs.region_data_load()

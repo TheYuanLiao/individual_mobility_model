@@ -64,7 +64,7 @@ if __name__ == '__main__':
             list_lines.append(line)
     df = pd.DataFrame(list_lines)
     # ['sweden-west', 'sweden-east', 'netherlands', 'saopaulo', 'sweden-national']
-    for region2compute in ['sweden-west', 'sweden-east', 'netherlands', 'saopaulo']:
+    for region2compute in ['sweden', 'netherlands', 'saopaulo']: #
         # Start timing the code
         start_time = time.time()
         dc = df.loc[df['region'] == region2compute, ['p', 'beta', 'gamma']].to_dict('records')[0]

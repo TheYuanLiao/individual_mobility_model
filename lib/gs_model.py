@@ -7,6 +7,7 @@ import lib.validation as validation
 import lib.mscthesis as mscthesis
 import lib.genericvalidation as genericvalidation
 import lib.sweden as sweden
+import lib.sweden_sv as sweden_sv
 import lib.saopaulo as saopaulo
 import lib.netherlands as netherlands
 
@@ -39,6 +40,12 @@ region_path = {
         'tweets_calibration': ROOT_dir + "/dbs/sweden/geotweets_c.csv",
         'tweets_validation': ROOT_dir + "/dbs/sweden/geotweets_v.csv",
         'gt': sweden.GroundTruthLoader(scale='east')
+    },
+    'sweden': {
+        'home_locations_path': ROOT_dir + "/dbs/sweden/homelocations.csv",
+        'tweets_calibration': ROOT_dir + "/dbs/sweden/geotweets_c.csv",
+        'tweets_validation': ROOT_dir + "/dbs/sweden/geotweets_v.csv",
+        'gt': sweden_sv.GroundTruthLoader()
     },
     'netherlands': {
         'home_locations_path': None,
@@ -175,7 +182,7 @@ class VisitsGeneration:
         return visits
 
     def visits2measure(self, visits=None, home_locations=None):
-        if 'sweden' in self.region:
+        if 'sweden-' in self.region:
             n_visits_before = visits.shape[0]
             home_locations_in_sampling = gpd.sjoin(home_locations, self.bbox)
             visits = visits[visits.index.isin(home_locations_in_sampling.index)]
