@@ -39,6 +39,14 @@ class RegionParaGenerate:
         rg_.load_geotweets(type=type)
         rg_.kl_baseline_compute()
         self.rg = rg_
+        # Save gt_odm in dbs for visualization purpose
+        gt_path = ROOT_dir + '/dbs/' + self.region + '/odm_gt.csv'
+        if ~os.path.exists(gt_path):
+            gt_odm2save = self.rg.gt_odm.copy()
+            gt_odm2save = gt_odm2save.reset_index()
+            gt_odm2save.columns = ['ozone', 'dzone', 'gt']
+            print('Saving gt_odm... \n', gt_odm2save.head())
+            gt_odm2save.to_csv(gt_path)
         self.visits = gs_model.VisitsGeneration(region=self.region, bbox=self.rg.bbox,
                                                 zones=self.rg.zones, odm=self.rg.gt_odm,
                                                 distances=self.rg.distances,
@@ -51,7 +59,12 @@ class RegionParaGenerate:
             tweets = self.rg.tweets_validation
         # userid as index for visits_total
         visits_total = self.visits.visits_gen(tweets, p, gamma, beta, days=260)
-        dms, _ = self.visits.visits2measure(visits=visits_total, home_locations=self.rg.home_locations)
+        dms, _, model_odm = self.visits.visits2measure(visits=visits_total, home_locations=self.rg.home_locations)
+        # Save model_odm in dbs for visualization purpose
+        model_odm = model_odm.reset_index()
+        model_odm.columns = ['ozone', 'dzone', 'model']
+        print('Saving model_odm... \n', model_odm.head())
+        model_odm.to_csv(ROOT_dir + '/dbs/' + self.region + '/' + type + '_odm.csv')
         dms.to_csv(ROOT_dir + '/results/grid-search/' + self.region + '_' + type + '_distances.csv')
 
 

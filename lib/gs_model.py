@@ -197,4 +197,4 @@ class VisitsGeneration:
         )
         dms.loc[:, 'groundtruth_sum'] = self.gt_dms['groundtruth_sum']
         divergence_measure = validation.DistanceMetrics().kullback_leibler(dms, titles=['groundtruth', 'model'])
-        return dms, divergence_measure
+        return dms, divergence_measure, model_odm

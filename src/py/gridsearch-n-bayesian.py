@@ -55,7 +55,7 @@ class RegionParaSearch:
         # pool.close()
 
         print('Visits generated:', len(visits_total))
-        _, divergence_measure = self.visits.visits2measure(visits=visits_total, home_locations=self.rg.home_locations)
+        _, divergence_measure, _ = self.visits.visits2measure(visits=visits_total, home_locations=self.rg.home_locations)
         # append the result to the gridsearch file
         dic = {'region': self.region, 'p': p, 'beta': beta, 'gamma': gamma,
                'kl-baseline': self.rg.kl_baseline, 'kl': divergence_measure}

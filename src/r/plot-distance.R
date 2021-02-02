@@ -10,8 +10,8 @@ library(glue)
 library(ggpubr)
 library(latex2exp)
 
-title_region <- c('Sweden - West', 'Sweden - East', 'The Netherlands', 'São Paulo, Brazil')
-names(title_region) <- c('sweden-west', 'sweden-east', 'netherlands', 'saopaulo')
+title_region <- c('Sweden', 'Sweden - West', 'Sweden - East', 'The Netherlands', 'São Paulo, Brazil')
+names(title_region) <- c('sweden', 'sweden-west', 'sweden-east', 'netherlands', 'saopaulo')
 
 lst <- readLines('results/summary.txt') %>% lapply(fromJSON)
 df <- bind_rows(lst)
@@ -76,19 +76,22 @@ reg_plt <- function(region, title_region, result, rs_path, df) {
   return(g1)
 }
 
-region <- 'sweden-west'
+# region <- 'sweden-west'
+# g1 <- reg_plt(region, title_region, result, rs_path, df)
+# region <- 'sweden-east'
+# g2 <- reg_plt(region, title_region, result, rs_path, df)
+
+region <- 'sweden'
 g1 <- reg_plt(region, title_region, result, rs_path, df)
-region <- 'sweden-east'
-g2 <- reg_plt(region, title_region, result, rs_path, df)
 region <- 'netherlands'
-g3 <- reg_plt(region, title_region, result, rs_path, df)
+g2 <- reg_plt(region, title_region, result, rs_path, df)
 region <- 'saopaulo'
-g4 <- reg_plt(region, title_region, result, rs_path, df)
+g3 <- reg_plt(region, title_region, result, rs_path, df)
 
 # save plot
-w <- 16
-h <- 4
-G <- ggarrange(g1, g2, g3, g4,
-               ncol = 4, nrow = 1)
+w <- 9
+h <- 3
+G <- ggarrange(g1, g2, g3,
+               ncol = 3, nrow = 1)
 ggsave(filename = glue("figures/distance.png"), plot=G,
        width = w, height = h, unit = "in", dpi = 300)

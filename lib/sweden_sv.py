@@ -45,6 +45,6 @@ class GroundTruthLoader:
         odms = trips.groupby(['origin_main_deso', 'desti_main_deso']).sum()['trip_weight']
         print(odms.head())
         z = self.zones.zone
-        odms = odms.reindex(pd.MultiIndex.from_product([z, z]), fill_value=0)
+        odms = odms.reindex(pd.MultiIndex.from_product([z, z], names=['ozone', 'dzone']), fill_value=0)
         print(odms.head())
         self.odm = odms / odms.sum()
