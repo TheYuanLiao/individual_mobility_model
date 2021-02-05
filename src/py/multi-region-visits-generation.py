@@ -61,7 +61,7 @@ class MultiRegionParaGenerate:
             self.zones = zones.loc[zones.geometry.notnull()].to_crs(metric_epsg)
             self.boundary = self.zones.assign(a=1).dissolve(by='a').simplify(tolerance=0.2).to_crs("EPSG:4326")
 
-    def load_geotweets(self, only_weekday=True, only_domestic=False):
+    def load_geotweets(self, only_weekday=True, only_domestic=True):
         geotweets = mscthesis.read_geotweets_raw(self.path2geotweets)
         if only_weekday:
             # Only look at weekday trips
@@ -81,7 +81,7 @@ class MultiRegionParaGenerate:
         geotweets = geotweets.loc[home_visits.index]
         # Remove users with less than 20 tweets
         tweetcount = geotweets.groupby('userid').size()
-        geotweets = geotweets.drop(labels=tweetcount[tweetcount < 20].index)
+        geotweets = geotweets.drop(labels=tweetcount[tweetcount < 20].index) # This is for domestic trip generation
         # Remove users with only one region
         regioncount = geotweets.groupby(['userid', 'region']).size().groupby('userid').size()
         geotweets = geotweets.drop(labels=regioncount[regioncount < 2].index)
@@ -118,23 +118,45 @@ class MultiRegionParaGenerate:
 
 
 if __name__ == '__main__':
-    region_list = ['austria', 'barcelona', 'sweden', 'netherlands', 'capetown', 'saopaulo', 'australia', 
-                   'cebu', 'egypt', 'guadalajara', 'jakarta', 'johannesburg', 'kualalumpur',
-                   'lagos', 'madrid', 'manila', 'mexicocity', 'moscow', 'nairobi',
-                   'rio', 'saudiarabia', 'stpertersburg', 'surabaya']
-    p, gamma, beta = 0.68, 0.05, 0.55
-    runid = 4
+    runid = 5
     days = 260
-    for region2compute in region_list:
-        # Start timing the code
-        start_time = time.time()
-        # prepare region data by initiating the class
-        print(f'{region2compute} started...')
-        g = MultiRegionParaGenerate(region=region2compute)
-        print('Loading zones to get boundary...')
-        g.country_zones_boundary_load()
-        print('Loading geotagged tweets...')
-        g.load_geotweets(only_domestic=True)
-        print('Generating visits...')
-        g.visits_gen(p=p, gamma=gamma, beta=beta, days=days, runid=runid)
-        print(region2compute, "is done. Elapsed time was %g seconds" % (time.time() - start_time))
+
+    # # The regions lacking ground truth data
+    # region_list = ['austria', 'barcelona', 'capetown', 'australia',
+    #                'cebu', 'egypt', 'guadalajara', 'jakarta', 'johannesburg', 'kualalumpur',
+    #                'lagos', 'madrid', 'manila', 'mexicocity', 'moscow', 'nairobi',
+    #                'rio', 'saudiarabia', 'stpertersburg', 'surabaya']
+    # p, gamma, beta = 0.93, 0.18, 0.21
+    # for region2compute in region_list:
+    #     # Start timing the code
+    #     start_time = time.time()
+    #     # prepare region data by initiating the class
+    #     print(f'{region2compute} started...')
+    #     g = MultiRegionParaGenerate(region=region2compute)
+    #     print('Loading zones to get boundary...')
+    #     g.country_zones_boundary_load()
+    #     print('Loading geotagged tweets...')
+    #     g.load_geotweets(only_domestic=True)
+    #     print('Generating visits...')
+    #     g.visits_gen(p=p, gamma=gamma, beta=beta, days=days, runid=runid)
+    #     print(region2compute, "is done. Elapsed time was %g seconds" % (time.time() - start_time))
+
+    # The regions with ground truth data
+    region_dict = {'sweden': (0.92, 0.07, 0.05),
+                   'netherlands': (0.98, 0.35, 0.04),
+                   'saopaulo': (0.89, 0.11, 0.53)}
+    for region2compute, para in region_dict.items():
+        if region2compute == 'netherlands':
+            p, gamma, beta = para[0], para[1], para[2]
+            # Start timing the code
+            start_time = time.time()
+            # prepare region data by initiating the class
+            print(f'{region2compute} started...')
+            g = MultiRegionParaGenerate(region=region2compute)
+            print('Loading zones to get boundary...')
+            g.country_zones_boundary_load()
+            print('Loading geotagged tweets...')
+            g.load_geotweets(only_domestic=True)
+            print('Generating visits...')
+            g.visits_gen(p=p, gamma=gamma, beta=beta, days=days, runid=runid)
+            print(region2compute, "is done. Elapsed time was %g seconds" % (time.time() - start_time))

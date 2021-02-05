@@ -75,7 +75,7 @@ G2 <- plt.region('netherlands')
 G3 <- plt.region('saopaulo')
 G <- ggarrange(G1, G2, G3, ncol = 1, nrow = 3, labels = c("(a)", "(b)", "(c)"))
 
-w <- 3 * 3
-h <- 3 * 3
+w <- 2.5 * 3
+h <- 2.5 * 3
 ggsave(filename = "figures/grid-search.png", plot=G,
            width = w*1.2, height = h*1.2, unit = "in", dpi = 300)

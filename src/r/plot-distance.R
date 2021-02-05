@@ -24,22 +24,23 @@ dist_upper <- function(x) {
 }
 
 
-plt <- function(title, para, df, dfv, model_cali, model_vali) {
+plt <- function(title, para, df, dfv, model_cali, model_vali, x_lab, y_lab) {
   g <- ggplot() + theme_minimal() +
-    geom_line(data = df, aes(x=d, y = gt, color="Ground truth"), size=0.8) +
-    geom_line(data = df, aes(x=d, y = model, color=model_cali), size=0.8) +
-    geom_line(data = dfv, aes(x=d, y = model, color=model_vali), size=0.8) +
-    geom_point(data = df, aes(x=d, y=0.01), shape=108) +
+    geom_line(data = df, aes(x=d, y = gt, color="Ground truth \n"), size=0.3) +
+    geom_line(data = df, aes(x=d, y = model, color=model_cali), size=0.3) +
+    geom_line(data = dfv, aes(x=d, y = model, color=model_vali), size=0.3) +
+    geom_point(data = df, aes(x=d, y=0.01), shape=108, size=0.5) +
     scale_x_log10() +
     scale_color_manual(name = "",
                        values = c('#ffa801','#3c40c6','#05c46b')) +
     labs(title = title, subtitle = para,
-         x = "Distance (log, km)", y = "Cumulative share of trips") +
-    theme(legend.position = c(0.55, 0.3))
+         x = x_lab, y = y_lab) +
+    theme(legend.position = c(0.55, 0.4),
+          plot.margin = margin(0,0,0,0, "cm"))
   return(g)
 }
 
-reg_plt <- function(region, title_region, result, rs_path, df) {
+reg_plt <- function(region, title_region, result, rs_path, df, x_lab, y_lab) {
   result <- df[df$region == region, c('p', 'gamma', 'beta', 'kl', 'kl-v')]
 
   # model
@@ -66,13 +67,14 @@ reg_plt <- function(region, title_region, result, rs_path, df) {
   beta <- result$beta
 
   # line names and optimal parameters
-  m.cali1 <- paste0("Model calibrated: KL divergence = ", signif(result$kl, digits=3))
-  m.vali1 <- paste0("Model validated: KL divergence = ", signif(result$`kl-v`, digits=3))
+  m.cali1 <- paste0("Model calibrated \n KL divergence = ", signif(result$kl, digits=3), "\n")
+  m.vali1 <- paste0("Model validated \n KL divergence = ", signif(result$`kl-v`, digits=3))
   para <- TeX(sprintf("$\\rho = %.2f,{ }\\beta = %.2f,{ }\\gamma = %.2f$", p, beta, gamma))
 
   # plot
-  g1 <- plt(title = title_region[region], para = para,
-            df=df, dfv=dfv, model_cali=m.cali1, model_vali=m.vali1)
+  g1 <- plt(title = '', para = '', #title = title_region[region], para = para
+            df=df, dfv=dfv, model_cali=m.cali1, model_vali=m.vali1,
+            x_lab = x_lab, y_lab = y_lab)
   return(g1)
 }
 
@@ -82,16 +84,16 @@ reg_plt <- function(region, title_region, result, rs_path, df) {
 # g2 <- reg_plt(region, title_region, result, rs_path, df)
 
 region <- 'sweden'
-g1 <- reg_plt(region, title_region, result, rs_path, df)
+g1 <- reg_plt(region, title_region, result, rs_path, df, '', 'Cumulative share of trips')
 region <- 'netherlands'
-g2 <- reg_plt(region, title_region, result, rs_path, df)
+g2 <- reg_plt(region, title_region, result, rs_path, df, "Distance (log, km)", '')
 region <- 'saopaulo'
-g3 <- reg_plt(region, title_region, result, rs_path, df)
+g3 <- reg_plt(region, title_region, result, rs_path, df, '', '')
 
 # save plot
-w <- 9
-h <- 3
+w <- 2.5 * 3
+h <- 2.5
 G <- ggarrange(g1, g2, g3,
-               ncol = 3, nrow = 1)
+               ncol = 3, nrow = 1, labels = c('(a)', '(b)', '(c)'))
 ggsave(filename = glue("figures/distance.png"), plot=G,
        width = w, height = h, unit = "in", dpi = 300)
