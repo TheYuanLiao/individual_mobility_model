@@ -27,6 +27,7 @@ class GroundTruthLoader:
         self.boundary = None
         self.zones_pop = None
         self.bbox = None
+        self.trip_distances = None
 
     def load_zones(self):
         _zones = gpd.read_file(ROOT_dir + '/dbs/saopaulo/zones/zones.shp')

@@ -58,13 +58,14 @@ class RegionParaGenerate:
         else:
             tweets = self.rg.tweets_validation
         # userid as index for visits_total
-        visits_total = self.visits.visits_gen(tweets, p, gamma, beta, days=260)
+        visits_total = self.visits.visits_gen(tweets, p, gamma, beta,
+                                              days=260, homelocations=self.rg.home_locations)
         dms, _, model_odm = self.visits.visits2measure(visits=visits_total, home_locations=self.rg.home_locations)
         # Save model_odm in dbs for visualization purpose
         model_odm = model_odm.reset_index()
         model_odm.columns = ['ozone', 'dzone', 'model']
         print('Saving model_odm... \n', model_odm.head())
-        model_odm.to_csv(ROOT_dir + '/dbs/' + self.region + '/' + type + '_odm.csv')
+        model_odm.to_csv(ROOT_dir + '/dbs/' + self.region + '/odm_' + type + '.csv')
         dms.to_csv(ROOT_dir + '/results/grid-search/' + self.region + '_' + type + '_distances.csv')
 
 
@@ -77,7 +78,7 @@ if __name__ == '__main__':
             list_lines.append(line)
     df = pd.DataFrame(list_lines)
     # ['sweden-west', 'sweden-east', 'netherlands', 'saopaulo', 'sweden-national']
-    for region2compute in ['sweden', 'netherlands', 'saopaulo']: #
+    for region2compute in ['sweden', 'netherlands']: #, 'netherlands', 'saopaulo'
         # Start timing the code
         start_time = time.time()
         dc = df.loc[df['region'] == region2compute, ['p', 'beta', 'gamma']].to_dict('records')[0]

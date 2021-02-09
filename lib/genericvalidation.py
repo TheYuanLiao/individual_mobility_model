@@ -30,9 +30,9 @@ def zone_distances(zones):
 
 def distance_quantiles(zone_dist):
     print("Calculating quantiles...")
-    quantiles = pd.qcut(zone_dist, q=100)
+    quantiles, bins = pd.qcut(zone_dist, q=100, retbins=True)
     qgrps = quantiles.groupby(quantiles)
-    return qgrps
+    return qgrps, bins
 
 
 def crs_convert_visits(visits, zones):
@@ -89,16 +89,25 @@ def aligned_visits_to_odm(visits, multiindex, timethreshold_hours=None):
     if "createdat" in visits:
         gaps_columns.append("createdat")
 
+    if "weight" in visits:
+        gaps_columns.append("weight")
+
     gaps = mscthesis.visit_gaps(visits[gaps_columns])
     if timethreshold_hours is not None:
         print("Applying timethreshold to gaps [{} hours]...".format(timethreshold_hours))
         gaps = gaps.assign(duration=gaps.createdat_destination - gaps.createdat_origin)
         gaps = gaps[gaps.duration < pd.Timedelta(timethreshold_hours, "hours")]
 
-    gaps = gaps[['zone_origin', 'zone_destination']]
-    sparse_odm = gaps \
-        .groupby(['zone_origin', 'zone_destination']).size() \
-        .reindex(multiindex, fill_value=0.0)
+    if "weight" not in visits:
+        gaps = gaps[['zone_origin', 'zone_destination']]
+        sparse_odm = gaps \
+            .groupby(['zone_origin', 'zone_destination']).size() \
+            .reindex(multiindex, fill_value=0.0)
+    else:
+        gaps = gaps[['zone_origin', 'zone_destination', 'weight']]
+        sparse_odm = gaps \
+            .groupby(['zone_origin', 'zone_destination'])['weight'].sum() \
+            .reindex(multiindex, fill_value=0.0)
     sparse_odm = sparse_odm / sparse_odm.sum()
     return sparse_odm
 

@@ -45,7 +45,8 @@ class RegionParaSearch:
 
     def gs_para(self, p=None, gamma=None, beta=None):
         # userid as index for visits_total
-        visits_total = self.visits.visits_gen(self.rg.tweets_calibration, p, gamma, beta, days=140)
+        visits_total = self.visits.visits_gen(self.rg.tweets_calibration, p, gamma, beta,
+                                              days=140, homelocations=self.rg.home_locations)
 
         # # parallelize the generation of visits over days
         # pool = mp.Pool(mp.cpu_count())
@@ -55,7 +56,7 @@ class RegionParaSearch:
         # pool.close()
 
         print('Visits generated:', len(visits_total))
-        _, divergence_measure, _ = self.visits.visits2measure(visits=visits_total, home_locations=self.rg.home_locations)
+        dms, divergence_measure, _ = self.visits.visits2measure(visits=visits_total, home_locations=self.rg.home_locations)
         # append the result to the gridsearch file
         dic = {'region': self.region, 'p': p, 'beta': beta, 'gamma': gamma,
                'kl-baseline': self.rg.kl_baseline, 'kl': divergence_measure}
@@ -68,7 +69,7 @@ class RegionParaSearch:
 
 if __name__ == '__main__':
     # ['sweden-west', 'sweden-east', 'netherlands', 'saopaulo', 'sweden-national']
-    for region2search in ['sweden', 'netherlands', 'saopaulo']:
+    for region2search in ['netherlands', 'sweden']: #, 'sweden', 'saopaulo'
         # prepare region data by initiating the class
         gs = RegionParaSearch(region=region2search)
         gs.region_data_load()

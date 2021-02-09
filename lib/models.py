@@ -236,6 +236,7 @@ class RegionTransitionZipf:
             index=regions.index,
             columns=["c"],
         )
+        distances_km = distances_km.loc[distances_km['c'] > 0, :]
         distances_km = distances_km.c
         region_probs = self.region_probabilities
         prob = region_probs * np.exp(-self.beta * distances_km)

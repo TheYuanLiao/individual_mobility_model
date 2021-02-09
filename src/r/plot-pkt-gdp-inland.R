@@ -9,7 +9,7 @@ library(ggrepel)
 library(ggpubr)
 
 # Domestic trips
-df_dom <- read.csv('results/multi-region_stats_rid_5.csv', encoding = "UTF-8")
+df_dom <- read.csv('results/multi-region_stats_rid_6.csv', encoding = "UTF-8")
 
 theme_set(
   theme_minimal() +

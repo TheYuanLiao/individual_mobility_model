@@ -118,45 +118,44 @@ class MultiRegionParaGenerate:
 
 
 if __name__ == '__main__':
-    runid = 5
+    runid = 6
     days = 260
 
-    # # The regions lacking ground truth data
-    # region_list = ['austria', 'barcelona', 'capetown', 'australia',
-    #                'cebu', 'egypt', 'guadalajara', 'jakarta', 'johannesburg', 'kualalumpur',
-    #                'lagos', 'madrid', 'manila', 'mexicocity', 'moscow', 'nairobi',
-    #                'rio', 'saudiarabia', 'stpertersburg', 'surabaya']
-    # p, gamma, beta = 0.93, 0.18, 0.21
-    # for region2compute in region_list:
-    #     # Start timing the code
-    #     start_time = time.time()
-    #     # prepare region data by initiating the class
-    #     print(f'{region2compute} started...')
-    #     g = MultiRegionParaGenerate(region=region2compute)
-    #     print('Loading zones to get boundary...')
-    #     g.country_zones_boundary_load()
-    #     print('Loading geotagged tweets...')
-    #     g.load_geotweets(only_domestic=True)
-    #     print('Generating visits...')
-    #     g.visits_gen(p=p, gamma=gamma, beta=beta, days=days, runid=runid)
-    #     print(region2compute, "is done. Elapsed time was %g seconds" % (time.time() - start_time))
+    # The regions lacking ground truth data
+    region_list = ['austria', 'barcelona', 'capetown', 'australia',
+                   'cebu', 'egypt', 'guadalajara', 'jakarta', 'johannesburg', 'kualalumpur',
+                   'lagos', 'madrid', 'manila', 'mexicocity', 'moscow', 'nairobi',
+                   'rio', 'saudiarabia', 'stpertersburg', 'surabaya']
+    p, gamma, beta = 0.74, 0.05, 0.14
+    for region2compute in region_list:
+        # Start timing the code
+        start_time = time.time()
+        # prepare region data by initiating the class
+        print(f'{region2compute} started...')
+        g = MultiRegionParaGenerate(region=region2compute)
+        print('Loading zones to get boundary...')
+        g.country_zones_boundary_load()
+        print('Loading geotagged tweets...')
+        g.load_geotweets(only_domestic=True)
+        print('Generating visits...')
+        g.visits_gen(p=p, gamma=gamma, beta=beta, days=days, runid=runid)
+        print(region2compute, "is done. Elapsed time was %g seconds" % (time.time() - start_time))
 
     # The regions with ground truth data
-    region_dict = {'sweden': (0.92, 0.07, 0.05),
-                   'netherlands': (0.98, 0.35, 0.04),
-                   'saopaulo': (0.89, 0.11, 0.53)}
+    region_dict = {'sweden': (0.98, 0.12, 0.02),
+                   'netherlands': (0.78, 0.01, 0.23),
+                   'saopaulo': (0.46, 0.01, 0.17)}
     for region2compute, para in region_dict.items():
-        if region2compute == 'netherlands':
-            p, gamma, beta = para[0], para[1], para[2]
-            # Start timing the code
-            start_time = time.time()
-            # prepare region data by initiating the class
-            print(f'{region2compute} started...')
-            g = MultiRegionParaGenerate(region=region2compute)
-            print('Loading zones to get boundary...')
-            g.country_zones_boundary_load()
-            print('Loading geotagged tweets...')
-            g.load_geotweets(only_domestic=True)
-            print('Generating visits...')
-            g.visits_gen(p=p, gamma=gamma, beta=beta, days=days, runid=runid)
-            print(region2compute, "is done. Elapsed time was %g seconds" % (time.time() - start_time))
+        p, gamma, beta = para[0], para[1], para[2]
+        # Start timing the code
+        start_time = time.time()
+        # prepare region data by initiating the class
+        print(f'{region2compute} started...')
+        g = MultiRegionParaGenerate(region=region2compute)
+        print('Loading zones to get boundary...')
+        g.country_zones_boundary_load()
+        print('Loading geotagged tweets...')
+        g.load_geotweets(only_domestic=True)
+        print('Generating visits...')
+        g.visits_gen(p=p, gamma=gamma, beta=beta, days=days, runid=runid)
+        print(region2compute, "is done. Elapsed time was %g seconds" % (time.time() - start_time))

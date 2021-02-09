@@ -48,13 +48,13 @@ region_path = {
         'gt': sweden_sv.GroundTruthLoader()
     },
     'netherlands': {
-        'home_locations_path': None,
+        'home_locations_path': ROOT_dir + "/dbs/netherlands/homelocations.csv",
         'tweets_calibration': ROOT_dir + "/dbs/netherlands/geotweets_c.csv",
         'tweets_validation': ROOT_dir + "/dbs/netherlands/geotweets_v.csv",
         'gt': netherlands.GroundTruthLoader()
     },
     'saopaulo': {
-        'home_locations_path': None,
+        'home_locations_path': ROOT_dir + "/dbs/saopaulo/homelocations.csv",
         'tweets_calibration': ROOT_dir + "/dbs/saopaulo/geotweets_c.csv",
         'tweets_validation': ROOT_dir + "/dbs/saopaulo/geotweets_v.csv",
         'gt': saopaulo.GroundTruthLoader()
@@ -75,6 +75,7 @@ class RegionDataPrep:
         self.zones = None
         self.gt_odm = None
         self.distances = None
+        self.trip_distances = None
         self.distance_quantiles = None
         self.home_locations = None
         self.tweets_calibration = None
@@ -94,19 +95,29 @@ class RegionDataPrep:
         # assign values of zones and gt_odm
         self.zones = ground_truth.zones
         self.gt_odm = ground_truth.odm
-
-        # print("Calculating distances...")
-        self.distances = genericvalidation.zone_distances(self.zones)
-        # print("Calculating distance quantiles...")
-        self.distance_quantiles = genericvalidation.distance_quantiles(self.distances)
         if self.region == 'sweden-national':
             self.gt_odm[self.distances < 100] = 0
             self.gt_odm = self.gt_odm / self.gt_odm.sum()
-        self.dms = validation.DistanceMetrics().compute(
-            self.distance_quantiles,
-            [self.gt_odm],
-            ['groundtruth']
-        )
+
+        # calculate ODM-based distances
+        self.distances = genericvalidation.zone_distances(self.zones)
+
+        # calculate distance quantiles and get the bins for potential processing of the actual trip distances
+        self.distance_quantiles, bins = genericvalidation.distance_quantiles(self.distances)
+
+        # fetch the raw trip distances if ground_truth.trip_distances is not None
+        if ground_truth.trip_distances is not None:
+            self.trip_distances = ground_truth.trip_distances
+            self.trip_distances.loc[:, 'distance'] = pd.cut(self.trip_distances.distance, bins, right=True)
+            self.dms = pd.DataFrame(self.trip_distances.groupby('distance')['weight'].sum())
+            self.dms.loc[:, 'weight'] = self.dms.loc[:, 'weight'] / sum(self.dms.loc[:, 'weight'])
+            self.dms = self.dms.rename(columns={'weight': 'groundtruth_sum'})
+        else:
+            self.dms = validation.DistanceMetrics().compute(
+                self.distance_quantiles,
+                [self.gt_odm],
+                ['groundtruth']
+            )
 
     def load_geotweets(self, type='calibration', only_weekday=True):
         if type == 'calibration':
@@ -121,12 +132,12 @@ class RegionDataPrep:
         home_visits = geotweets.query("label == 'home'").groupby('userid').size()
         geotweets = geotweets.loc[home_visits.index]
         # read home locations
+        self.home_locations = pd.read_csv(region_path[self.region]['home_locations_path']).set_index('userid')
         if 'sweden' in self.region:
-            home_locations = pd.read_csv(region_path[self.region]['home_locations_path']).set_index('userid')
             self.home_locations = gpd.GeoDataFrame(
-                home_locations,
+                self.home_locations,
                 crs="EPSG:4326",
-                geometry=gpd.points_from_xy(home_locations.longitude, home_locations.latitude),
+                geometry=gpd.points_from_xy(self.home_locations.longitude, self.home_locations.latitude),
             ).to_crs("EPSG:3006")
         # Remove users with less than 20 tweets
         tweetcount = geotweets.groupby('userid').size()
@@ -141,13 +152,9 @@ class RegionDataPrep:
             self.tweets_validation = geotweets.sort_values(by=['userid', 'createdat']).drop(columns=['geometry'])
 
     def kl_baseline_compute(self):
-        self.dms = validation.DistanceMetrics().compute(
-            self.distance_quantiles,
-            [self.gt_odm],
-            ['groundtruth']
-        )
         self.dms.loc[:, 'baseline_sum'] = 0
-        self.dms.loc[self.dms['groundtruth_sum'] != 0, 'baseline_sum'] = 1 / len(self.dms.loc[self.dms['groundtruth_sum'] != 0, :])
+        self.dms.loc[self.dms['groundtruth_sum'] != 0,
+                     'baseline_sum'] = 1 / len(self.dms.loc[self.dms['groundtruth_sum'] != 0, :])
         self.kl_baseline = validation.DistanceMetrics().kullback_leibler(self.dms, titles=['groundtruth', 'baseline'])
 
 
@@ -167,7 +174,7 @@ class VisitsGeneration:
         self.gt_dms = gt_dms
         self.bbox = bbox
 
-    def visits_gen(self, geotweets=None, p=None, gamma=None, beta=None, days=None):
+    def visits_gen(self, geotweets=None, p=None, gamma=None, beta=None, days=None, homelocations=None):
         visit_factory = models.Sampler(
                             model=models.PreferentialReturn(
                                 p=p,
@@ -179,9 +186,14 @@ class VisitsGeneration:
                         )
         # Calculate visits
         visits = visit_factory.sample(geotweets)
+
+        # Add weight if applicable
+        if 'weight' in homelocations:
+            visits = pd.merge(visits, homelocations.loc[:, ['weight']],
+                              left_index=True, right_index=True)
         return visits
 
-    def visits2measure(self, visits=None, home_locations=None):
+    def visits2measure(self, visits=None, home_locations=None, true_distance=False):
         if 'sweden-' in self.region:
             n_visits_before = visits.shape[0]
             home_locations_in_sampling = gpd.sjoin(home_locations, self.bbox)
@@ -190,11 +202,20 @@ class VisitsGeneration:
         model_odm = genericvalidation.visits_to_odm(visits, self.zones)
         if self.region == 'sweden-national':
             model_odm[self.distances < 100] = 0
+
+        # # fetch the raw trip distances if true_distance is set True
+        # if true_distance:
+        #     self.trip_distances = ground_truth.trip_distances
+        #     self.trip_distances.loc[:, 'distance'] = pd.cut(self.trip_distances.distance, bins, right=True)
+        #     self.dms = pd.DataFrame(self.trip_distances.groupby('distance')['weight'].sum())
+        #     self.dms.loc[:, 'weight'] = self.dms.loc[:, 'weight'] / sum(self.dms.loc[:, 'weight'])
+        #     self.dms = self.dms.rename(columns={'weight': 'groundtruth_sum'})
+        # else:
         dms = validation.DistanceMetrics().compute(
             self.distance_quantiles,
             [model_odm],
             ['model']
         )
-        dms.loc[:, 'groundtruth_sum'] = self.gt_dms['groundtruth_sum']
+        dms.loc[:, 'groundtruth_sum'] = self.gt_dms.loc[:, 'groundtruth_sum'].values
         divergence_measure = validation.DistanceMetrics().kullback_leibler(dms, titles=['groundtruth', 'model'])
         return dms, divergence_measure, model_odm

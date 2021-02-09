@@ -77,15 +77,15 @@ def region_visits_proc(region=None, runid=None):
 
 
 if __name__ == '__main__':
-    # # region_list = ['saopaulo', 'australia', 'austria', 'barcelona', 'sweden', 'netherlands', 'capetown',
-    # #                'cebu', 'egypt', 'guadalajara', 'jakarta', 'johannesburg', 'kualalumpur',
-    # #                'lagos', 'madrid', 'manila', 'mexicocity', 'moscow', 'nairobi',
-    # #                'rio', 'saudiarabia', 'stpertersburg', 'surabaya']
-    # region_list = ['saopaulo', 'sweden', 'netherlands']
+    region_list = ['saopaulo', 'australia', 'austria', 'barcelona', 'sweden', 'netherlands', 'capetown',
+                   'cebu', 'egypt', 'guadalajara', 'jakarta', 'johannesburg', 'kualalumpur',
+                   'lagos', 'madrid', 'manila', 'mexicocity', 'moscow', 'nairobi',
+                   'rio', 'saudiarabia', 'stpertersburg', 'surabaya']
+    # region_list = ['saopaulo', 'sweden'] #, 'netherlands'
     #
-    runid = 5
+    runid = 6
     # # parallelize the processing of geotagged tweets of multiple regions
-    # pool = mp.Pool(mp.cpu_count())
-    # pool.starmap(region_visits_proc, [(r, runid, ) for r in region_list])
-    # pool.close()
-    region_visits_proc('netherlands', runid)
+    pool = mp.Pool(mp.cpu_count())
+    pool.starmap(region_visits_proc, [(r, runid, ) for r in region_list])
+    pool.close()
+    # region_visits_proc('netherlands', runid)

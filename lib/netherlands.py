@@ -35,6 +35,7 @@ class GroundTruthLoader:
         self.odm = None
         self.boundary = None
         self.bbox = None
+        self.trip_distances = None
 
     def load_zones(self):
         _zones = gpd.read_file(ROOT_dir + '/dbs/netherlands/mobility_data/CBS_PC4_2017_v1.shp')
@@ -46,7 +47,7 @@ class GroundTruthLoader:
     def load_odm(self):
         sheet1 = pd.read_excel(ROOT_dir + "/dbs/netherlands/mobility_data/OViN2017_Databestand.xlsx")
         trips = sheet1[
-            ['OPID', 'Wogem', 'Jaar', 'Maand', 'Dag', 'VerplID',
+            ['OPID', 'AfstV', 'Wogem', 'Jaar', 'Maand', 'Dag', 'VerplID',
              'VertUur', 'VertPC', 'AankUur', 'AankPC', 'FactorV']]
         trips = trips.rename(columns={
             'Wogem': 'home_city',
@@ -59,7 +60,14 @@ class GroundTruthLoader:
             'AankUur': 'dest_time',
             'AankPC': 'dest_zip',
             'FactorV': 'weight_trip',
+            'AfstV': 'distance'
         })
+        # Prepare the actual trip distances
+        trips_d = trips.dropna(subset=['distance'])
+        trips_d.loc[:, 'distance'] = trips_d.loc[:, 'distance'] / 10 # hectometer to km
+        self.trip_distances = trips_d.loc[:, ['distance', 'weight_trip']].rename(columns={'weight_trip': 'weight'})
+
+        # Prepare ODM
         trips = trips.dropna(subset=['trip_id'])
         trips = trips.groupby(['OPID', 'trip_id']).apply(trip_row)
         trips['origin_zip'] = trips['origin_zip'].astype('int64')
