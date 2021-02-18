@@ -36,6 +36,7 @@ class MultiRegionVisitsDesc:
         self.visits = None
         self.visits_stats = None
         self.path2visits_stats = ROOT_dir + f'/dbs/{region}/visits/visits_{runid}_stats.csv'
+        self.path2visits_trips = ROOT_dir + f'/dbs/{region}/visits/visits_{runid}_trips.csv'
 
     def user_proc(self, data):
         data = data.copy()
@@ -60,32 +61,52 @@ class MultiRegionVisitsDesc:
                           'pkt_inland': data2.loc[:, 'distance'].sum(), #data2['inland'] == 1
                           'num_trip_inland': len(data2)}) #data2['inland'] == 1
 
+    def user_day_proc_distance(self, data):
+        data2 = data.copy()
+        data2.loc[:, 'latitude_d'] = np.vstack((data2[1:].latitude.values.reshape(len(data2) - 1, 1),
+                                                data2[:1].latitude.values.reshape(1, 1)))
+        data2.loc[:, 'longitude_d'] = np.vstack((data2[1:].longitude.values.reshape(len(data2) - 1, 1),
+                                                 data2[:1].longitude.values.reshape(1, 1)))
+        #data2.loc[:, 'dom_d'] = np.vstack((data2[1:].dom.values.reshape(len(data2) - 1, 1),
+        #                                   data2[:1].dom.values.reshape(1, 1)))
+        data2.loc[:, 'distance'] = data2.apply(
+            lambda row: mscthesis.haversine_distance(row['latitude'], row['longitude'],
+                                                     row['latitude_d'], row['longitude_d']), axis=1)
+        #data2.loc[:, 'inland'] = data2.apply(lambda row: 1 if (row['dom'] == 1) & (row['dom_d'] == 1) else 0, axis=1)
+        return data2.loc[:, ['userid', 'timeslot', 'day_n', 'distance',
+                             'latitude', 'longitude', 'latitude_d', 'longitude_d']]
+
     def load_visits_preprocess(self):
         df_v = pd.read_csv(self.path2visits)
         self.visits = df_v.groupby('userid').apply(self.user_proc).reset_index(drop=True)
 
-    def visits_desc_compute(self):
+    def visits_desc_compute(self, aggregation=True):
         tqdm.pandas(desc=self.region)
-        self.visits_stats = self.visits.groupby(['userid', 'day_n']).progress_apply(self.user_day_proc).reset_index()
-        self.visits_stats.to_csv(self.path2visits_stats)
+        if aggregation:
+            self.visits_stats = self.visits.groupby(['userid', 'day_n']).progress_apply(self.user_day_proc).reset_index()
+            self.visits_stats.to_csv(self.path2visits_stats, index=False)
+        else:
+            self.visits_stats = self.visits.groupby(['userid', 'day_n']).progress_apply(self.user_day_proc_distance).reset_index(drop=True)
+            self.visits_stats.to_csv(self.path2visits_trips, index=False)
 
 
-def region_visits_proc(region=None, runid=None):
+def region_visits_proc(region=None, runid=None, aggregation=True):
     rg = MultiRegionVisitsDesc(region=region, runid=runid)
     rg.load_visits_preprocess()
-    rg.visits_desc_compute()
+    rg.visits_desc_compute(aggregation=aggregation)
 
 
 if __name__ == '__main__':
     region_list = ['saopaulo', 'australia', 'austria', 'barcelona', 'sweden', 'netherlands', 'capetown',
-                   'cebu', 'egypt', 'guadalajara', 'jakarta', 'johannesburg', 'kualalumpur',
-                   'lagos', 'madrid', 'manila', 'mexicocity', 'moscow', 'nairobi',
+                   'cebu', 'egypt', 'guadalajara', 'jakarta', 'johannesburg', 'kualalumpur', 'nairobi',
+                   'lagos', 'madrid', 'manila', 'mexicocity', 'moscow',
                    'rio', 'saudiarabia', 'stpertersburg', 'surabaya']
-    # region_list = ['saopaulo', 'sweden'] #, 'netherlands'
-    #
     runid = 6
-    # # parallelize the processing of geotagged tweets of multiple regions
+    # If agg set to False, then the trips will be logged, otherwise, the aggregate statistics will be logged
+    agg = False
+    # parallelize the processing of geotagged tweets of multiple regions
     pool = mp.Pool(mp.cpu_count())
-    pool.starmap(region_visits_proc, [(r, runid, ) for r in region_list])
+    pool.starmap(region_visits_proc, [(r, runid, agg, ) for r in region_list])
     pool.close()
-    # region_visits_proc('netherlands', runid)
+    # Single region test
+    # region_visits_proc('nairobi', runid, aggregation=agg)

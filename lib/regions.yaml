@@ -12,6 +12,7 @@ sweden:
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/sweden/SWE_adm2.shp
   country_zone_id: ID_2
+  country_area: 450295
   source_path: E:/Top_Users_Timelines/Sweden_timelines.sqlite3
   zone_id: ID
   zones_loader: 1
@@ -27,6 +28,7 @@ netherlands:
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/netherlands/NLD_adm2.shp
   country_zone_id: ID_2
+  country_area: 41543
   source_path: E:/Top_Users_Timelines/Netherlands_timelines.sqlite3
   zone_id: id
   zones_loader: 1
@@ -42,6 +44,7 @@ australia:
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/australia/AUS_adm2.shp
   country_zone_id: ID_2
+  country_area: 7692000
   source_path: E:/Top_Users_Timelines/Australia_timelines.sqlite3
   zone_id: SA3_CODE16
   zones_loader: 1
@@ -57,6 +60,7 @@ austria:
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/austria/zones/gadm36_AUT_3.shp
   country_zone_id: CC_3
+  country_area: 83879
   source_path: E:/Top_Users_Timelines/Austria_timelines.sqlite3
   zone_id: CC_3
   zones_loader: 1
@@ -72,6 +76,7 @@ barcelona:
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/spain/ESP_adm3.shp
   country_zone_id: ID_3
+  country_area: 505990
   source_path: E:/Top_Users_Timelines/Barcelona_timelines.sqlite3
   zone_id: CC_4
   zones_loader: 1
@@ -87,6 +92,7 @@ madrid:
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/spain/ESP_adm3.shp
   country_zone_id: ID_3
+  country_area: 505990
   source_path: E:/Top_Users_Timelines/Madrid_timelines.sqlite3
   zone_id: OBJECTID
   zones_loader: 1
@@ -102,6 +108,7 @@ egypt:
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/egypt/EGY_adm2.shp
   country_zone_id: ID_2
+  country_area: 1010000
   source_path: E:/Top_Users_Timelines/Egypt_timelines.sqlite3
   zone_id: zone
   zones_loader: 1
@@ -117,6 +124,7 @@ jakarta:
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/indonesia/IDN_adm2.shp
   country_zone_id: ID_2
+  country_area: 1905000
   source_path: E:/Top_Users_Timelines/Jakarta_timelines.sqlite3
   zone_id: zone
   zones_loader: 1
@@ -132,6 +140,7 @@ surabaya:
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/indonesia/IDN_adm2.shp
   country_zone_id: ID_2
+  country_area: 1905000
   source_path: E:/Top_Users_Timelines/Surabaya_timelines.sqlite3
   zone_id: zone
   zones_loader: 1
@@ -147,6 +156,7 @@ johannesburg:
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/southafrica/ZAF_adm2.shp
   country_zone_id: ID_2
+  country_area: 1220000
   source_path: E:/Top_Users_Timelines/Johannesburg_timelines.sqlite3
   zone_id: NAME_4
   zones_loader: 1
@@ -162,6 +172,7 @@ capetown:
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/southafrica/ZAF_adm2.shp
   country_zone_id: ID_2
+  country_area: 1220000
   source_path: E:/Top_Users_Timelines/Cape_town_timelines.sqlite3
   zone_id: NAME_4
   zones_loader: 1
@@ -177,6 +188,7 @@ kualalumpur:
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/malaysia/MYS_adm1.shp
   country_zone_id: ID_1
+  country_area: 329847
   source_path: E:/Top_Users_Timelines/Kuala_Lumpur_timelines.sqlite3
   zone_id: CC_2
   zones_loader: 1
@@ -192,6 +204,7 @@ lagos:
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/nigeria/NGA_adm2.shp
   country_zone_id: ID_2
+  country_area: 923768
   source_path: E:/Top_Users_Timelines/Lagos_timelines.sqlite3
   zone_id: CC_2
   zones_loader: 1
@@ -207,6 +220,7 @@ manila:
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/philippines/PHL_adm1.shp
   country_zone_id: ID_1
+  country_area: 300000
   source_path: E:/Top_Users_Timelines/Manila_timelines.sqlite3
   zone_id: ID_3
   zones_loader: 1
@@ -222,6 +236,7 @@ cebu:
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/philippines/PHL_adm1.shp
   country_zone_id: ID_1
+  country_area: 300000
   source_path: E:/Top_Users_Timelines/Cebu_timelines.sqlite3
   zone_id: ID_3
   zones_loader: 1
@@ -235,8 +250,9 @@ mexicocity:
   metric_epsg: EPSG:4326
   zones_path: /dbs/mexicocity/zones/zones.shp
   country_metric_epsg: EPSG:4326
-  country_zones_path: /dbs/countries/mexico/MEX_adm2.shp
+  country_zones_path: /dbs/countries/mexico/MEX_adm2_r.shp
   country_zone_id: ID_2
+  country_area: 1973000
   source_path: E:/Top_Users_Timelines/Mexico_city_timelines.sqlite3
   zone_id: CC_2
   zones_loader: 1
@@ -252,6 +268,7 @@ guadalajara:
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/mexico/MEX_adm2.shp
   country_zone_id: ID_2
+  country_area: 1973000
   source_path: E:/Top_Users_Timelines/Guadalajara_timelines.sqlite3
   zone_id: CC_2
   zones_loader: 1
@@ -267,6 +284,7 @@ moscow:
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/russia/RUS_adm3.shp
   country_zone_id: ID_3
+  country_area: 17100000
   source_path: E:/Top_Users_Timelines/Moscow_timelines.sqlite3
   zone_id: zone
   zones_loader: 1
@@ -282,6 +300,7 @@ stpertersburg:
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/russia/RUS_adm3.shp
   country_zone_id: ID_3
+  country_area: 17100000
   source_path: E:/Top_Users_Timelines/St_Petersburg_timelines.sqlite3
   zone_id: zone
   zones_loader: 1
@@ -297,6 +316,7 @@ nairobi:
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/kenya/ken_admbnda_adm2_iebc_20191031.shp
   country_zone_id: zone
+  country_area: 580367
   source_path: E:/Top_Users_Timelines/Nairobi_timelines.sqlite3
   zone_id: CC_3
   zones_loader: 1
@@ -312,6 +332,7 @@ rio:
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/brazil/Brazil_Polygon.shp
   country_zone_id: id
+  country_area: 8516000
   source_path: E:/Top_Users_Timelines/Rio_de_Janeiro_timelines.sqlite3
   zone_id: CC_3
   zones_loader: 1
@@ -327,6 +348,7 @@ saopaulo:
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/brazil/Brazil_Polygon.shp
   country_zone_id: id
+  country_area: 8516000
   source_path: E:/Top_Users_Timelines/Sao_Paulo_timelines.sqlite3
   zone_id: NumeroZona
   zones_loader: 1
@@ -342,6 +364,7 @@ saudiarabia:
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/saudiarabia/saudia_district_29f.shp
   country_zone_id: zone
+  country_area: 2150000
   source_path: E:/Top_Users_Timelines/Saudi_Arabia_timelines.sqlite3
   zone_id: CC_1
   zones_loader: 1
