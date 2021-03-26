@@ -1,5 +1,5 @@
-# Title     : Grid search results
-# Objective : Take the grid search record and visualise it
+# Title     : The results of parameters search
+# Objective : Take the search records and visualise them
 # Created by: Yuan Liao
 # Created on: 2020-09-08
 
@@ -18,7 +18,7 @@ title_region <- c('Sweden', 'The Netherlands', 'São Paulo, Brazil') # 'Sweden -
 names(title_region) <- c('sweden', 'netherlands', 'saopaulo') # 'sweden-west', 'sweden-east',
 
 plt.region <- function(region){    # Load grid search records
-    lst <- readLines(glue('results/grid-search/gridsearch-n_{region}.txt')) %>% lapply(fromJSON)
+    lst <- readLines(glue('results/para-search/parasearch-n_{region}.txt')) %>% lapply(fromJSON)
     df <- bind_rows(lst)
     df <- df[(df$kl != 999) & (df$kl > 0),]
     para.op <- df[df$kl == min(df$kl), c('p', 'beta', 'gamma', 'kl')]
@@ -77,5 +77,5 @@ G <- ggarrange(G1, G2, G3, ncol = 1, nrow = 3, labels = c("(a)", "(b)", "(c)"))
 
 w <- 2.5 * 3
 h <- 2.5 * 3
-ggsave(filename = "figures/grid-search.png", plot=G,
+ggsave(filename = "figures/para-search.png", plot=G,
            width = w*1.2, height = h*1.2, unit = "in", dpi = 300)

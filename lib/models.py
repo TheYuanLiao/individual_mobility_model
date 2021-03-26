@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.metrics.pairwise import haversine_distances
-import lib.mscthesis as mscthesis
+import lib.helpers as helpers
 import multiprocessing as mp
 
 
@@ -271,9 +271,9 @@ class JumpSizeDirectionTrueProb:
         }
 
     def fit(self, tweets):
-        gaps = mscthesis.gaps(tweets)
+        gaps = helpers.gaps(tweets)
         gaps = gaps[gaps['region_origin'] != gaps['region_destination']]
-        bearings = mscthesis.coordinates_bearing(
+        bearings = helpers.coordinates_bearing(
             gaps.latitude_origin.values,
             gaps.longitude_origin.values,
             gaps.latitude_destination.values,
@@ -385,7 +385,7 @@ class Sampler:
 
     def visits(self):
         if self._visits is None:
-            geotweets = mscthesis.read_geotweets_raw(self.geotweets_path).set_index('userid')
+            geotweets = helpers.read_geotweets_raw(self.geotweets_path).set_index('userid')
             geotweets = geotweets[(geotweets['weekday'] < 6) & (0 < geotweets['weekday'])]
             home_visits = geotweets.query("label == 'home'").groupby('userid').size()
             geotweets = geotweets.loc[home_visits.index]
@@ -466,7 +466,7 @@ class VisitsFromGeotweetsFile:
 
     def visits(self):
         if self._visits is None:
-            v = mscthesis.read_geotweets_raw(self.file_path).set_index('userid')
+            v = helpers.read_geotweets_raw(self.file_path).set_index('userid')
             v = v[(v['weekday'] < 6) & (0 < v['weekday'])]
             v = geotweets_to_visits(v)
             self._visits = v

@@ -45,7 +45,7 @@ rgplot <- function(region){
     labs(x='d (km)', y='p(d)', title = region_names[region]) +
     geom_vline(xintercept = d0, linetype ='dotted', color="steelblue", size=0.8) +
     annotate(geom = 'text', x = d0 + 25, y = 10^(-8.5),
-             label = sprintf('Median trip distance=%.2f', d0)) +
+             label = sprintf('Median trip distance=%.1f', d0)) +
     scale_x_log10(limits = c(0.1, 10^4),
                   breaks = trans_breaks("log10", function(x) 10^x),
                   labels = trans_format("log10", scales::math_format(10^.x))) +

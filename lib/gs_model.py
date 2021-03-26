@@ -4,9 +4,9 @@ import pandas as pd
 import geopandas as gpd
 import lib.models as models
 import lib.validation as validation
-import lib.mscthesis as mscthesis
+import lib.helpers as helpers
 import lib.genericvalidation as genericvalidation
-import lib.sweden as sweden
+import legacy.sweden_sampers.sweden as sweden
 import lib.sweden_sv as sweden_sv
 import lib.saopaulo as saopaulo
 import lib.netherlands as netherlands
@@ -124,7 +124,7 @@ class RegionDataPrep:
             geotweets_path = region_path[self.region]['tweets_calibration']
         else:
             geotweets_path = region_path[self.region]['tweets_validation']
-        geotweets = mscthesis.read_geotweets_raw(geotweets_path).set_index('userid')
+        geotweets = helpers.read_geotweets_raw(geotweets_path).set_index('userid')
         if only_weekday:
             # Only look at weekday trips
             geotweets = geotweets[(geotweets['weekday'] < 6) & (0 < geotweets['weekday'])]
@@ -203,14 +203,6 @@ class VisitsGeneration:
         if self.region == 'sweden-national':
             model_odm[self.distances < 100] = 0
 
-        # # fetch the raw trip distances if true_distance is set True
-        # if true_distance:
-        #     self.trip_distances = ground_truth.trip_distances
-        #     self.trip_distances.loc[:, 'distance'] = pd.cut(self.trip_distances.distance, bins, right=True)
-        #     self.dms = pd.DataFrame(self.trip_distances.groupby('distance')['weight'].sum())
-        #     self.dms.loc[:, 'weight'] = self.dms.loc[:, 'weight'] / sum(self.dms.loc[:, 'weight'])
-        #     self.dms = self.dms.rename(columns={'weight': 'groundtruth_sum'})
-        # else:
         dms = validation.DistanceMetrics().compute(
             self.distance_quantiles,
             [model_odm],

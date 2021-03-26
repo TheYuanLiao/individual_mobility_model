@@ -1,7 +1,7 @@
 from sklearn.metrics import pairwise_distances
 import pandas as pd
 import geopandas as gpd
-import lib.mscthesis as mscthesis
+import lib.helpers as helpers
 
 
 def zone_distances(zones):
@@ -92,7 +92,7 @@ def aligned_visits_to_odm(visits, multiindex, timethreshold_hours=None):
     if "weight" in visits:
         gaps_columns.append("weight")
 
-    gaps = mscthesis.visit_gaps(visits[gaps_columns])
+    gaps = helpers.visit_gaps(visits[gaps_columns])
     if timethreshold_hours is not None:
         print("Applying timethreshold to gaps [{} hours]...".format(timethreshold_hours))
         gaps = gaps.assign(duration=gaps.createdat_destination - gaps.createdat_origin)

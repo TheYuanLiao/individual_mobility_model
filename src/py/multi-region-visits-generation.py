@@ -3,9 +3,7 @@ import sys
 import subprocess
 import json
 import time
-import pandas as pd
 import geopandas as gpd
-import multiprocessing as mp
 import yaml
 
 
@@ -24,7 +22,7 @@ sys.path.insert(0, ROOT_dir + '/lib')
 with open(ROOT_dir + '/lib/regions.yaml') as f:
     region_manager = yaml.load(f, Loader=yaml.FullLoader)
 
-import lib.mscthesis as mscthesis
+import lib.helpers as helpers
 import lib.models as models
 
 
@@ -62,7 +60,7 @@ class MultiRegionParaGenerate:
             self.boundary = self.zones.assign(a=1).dissolve(by='a').simplify(tolerance=0.2).to_crs("EPSG:4326")
 
     def load_geotweets(self, only_weekday=True, only_domestic=True):
-        geotweets = mscthesis.read_geotweets_raw(self.path2geotweets)
+        geotweets = helpers.read_geotweets_raw(self.path2geotweets)
         if only_weekday:
             # Only look at weekday trips
             geotweets = geotweets[(geotweets['weekday'] < 6) & (0 < geotweets['weekday'])]
@@ -101,15 +99,6 @@ class MultiRegionParaGenerate:
         # Calculate visits
         self.visits = visit_factory.sample(self.geotweets)
         print("Visits generation is done. Now saving...")
-        # # parallelize the generation of visits over days
-        # visits_total_gpd = gpd.GeoDataFrame(
-        #     visits_total,
-        #     crs='EPSG:4326',
-        #     geometry=gpd.points_from_xy(visits_total['longitude'], visits_total['latitude'])
-        # )
-        # visits_total_inland = gpd.clip(visits_total_gpd, self.boundary.convex_hull)
-        # visits_total.loc[visits_total.index.isin(visits_total_inland.index), 'dom'] = 1
-        # visits_total.loc[~visits_total.index.isin(visits_total_inland.index), 'dom'] = 0
         if not os.path.exists(self.path2visits + f'visits_{runid}.csv'):
             self.visits.to_csv(self.path2visits + f'visits_{runid}.csv')
         with open(self.path2visits + 'paras.txt', 'a') as outfile:

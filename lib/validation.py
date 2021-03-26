@@ -2,8 +2,8 @@ import pandas as pd
 import geopandas as gpd
 import numpy as np
 from sklearn.metrics import pairwise_distances
-import lib.sampers as sampers
-import lib.mscthesis as mscthesis
+import legacy.sweden_sampers.sampers as sampers
+import lib.helpers as helpers
 
 scales = ['national', 'east', 'west']
 
@@ -139,7 +139,7 @@ class Sampers:
             .reset_index().set_index(['userid', 'day', 'timeslot']).sort_index() \
             .reset_index().set_index('userid')
 
-        sparse_odm = mscthesis.visit_gaps(visits[['zone']]) \
+        sparse_odm = helpers.visit_gaps(visits[['zone']]) \
             .groupby(['zone_origin', 'zone_destination']).size() \
             .reindex(self.odm[scale].index, fill_value=0.0)
 

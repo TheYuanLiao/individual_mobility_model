@@ -1,12 +1,11 @@
 import os
 import sys
 import subprocess
-import numpy as np
 import pandas as pd
 import multiprocessing as mp
-from tqdm import tqdm
 import geopandas as gpd
 import yaml
+
 
 def get_repo_root():
     """Get the root directory of the repo."""

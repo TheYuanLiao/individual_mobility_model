@@ -16,7 +16,7 @@ names(title_region) <- c('sweden', 'sweden-west', 'sweden-east', 'netherlands', 
 lst <- readLines('results/summary.txt') %>% lapply(fromJSON)
 df <- bind_rows(lst)
 
-rs_path <- 'results/grid-search/'
+rs_path <- 'results/para-search/'
 
 dist_upper <- function(x) {
   x_s <- unlist(strsplit(x, ","))
@@ -67,8 +67,8 @@ reg_plt <- function(region, title_region, result, rs_path, df, x_lab, y_lab) {
   beta <- result$beta
 
   # line names and optimal parameters
-  m.cali1 <- paste0("Model calibrated \n KL divergence = ", signif(result$kl, digits=3), "\n")
-  m.vali1 <- paste0("Model validated \n KL divergence = ", signif(result$`kl-v`, digits=3))
+  m.cali1 <- paste0("Model calibration \n KL divergence = ", signif(result$kl, digits=3), "\n")
+  m.vali1 <- paste0("Model validation \n KL divergence = ", signif(result$`kl-v`, digits=3))
   para <- TeX(sprintf("$\\rho = %.2f,{ }\\beta = %.2f,{ }\\gamma = %.2f$", p, beta, gamma))
 
   # plot

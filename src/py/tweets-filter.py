@@ -19,7 +19,7 @@ ROOT_dir = get_repo_root()
 sys.path.append(ROOT_dir)
 sys.path.insert(0, ROOT_dir + '/lib')
 
-import lib.mscthesis as mscthesis
+import lib.helpers as mscthesis
 
 
 with open(ROOT_dir + '/lib/regions.yaml') as f:
