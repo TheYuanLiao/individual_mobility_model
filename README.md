@@ -1,5 +1,5 @@
-# Master thesis: Individual Mobility Model
-Kristoffer Ek & Eric Wennerberg
+# Synthetic Travel Demand from Sparse Individual Traces
+Yuan Liao, Kristoffer Ek, Eric Wennerberg, Sonia Yeh, and Jorge Gil
 
 ## Bootstrap environment
 Make sure you have Conda installed
@@ -7,20 +7,6 @@ Make sure you have Conda installed
 sh ./src/py/conda-install.sh
 ```
 This will install all required dependencies to a miniconda workspace.
-
-## Converting from JSON dump to sqlite
-This is done in Go `src/go`. Can "ingest" regular directories filled with JSON files and zipped directories with JSON files.
-```bash
-cd src/go
-
-# Regular directories
-go run ./cmd/mobility --ctx saopaulo ingest --create --directory /path/to/HDD/07_Timelines_Sao\ Paulo
-
-# Zipped directory
-go run ./cmd/mobility --ctx netherlands ingest --create --zip /path/to/HDD/02_Netherlands.zip
-```
-
-This will, after some time, create a .sqlite3 file in CWD filled with geotagged tweets.
 
 ## Pre-processing
 This is done in the notebook `src/py/1-filter-tweets.ipynb`.
