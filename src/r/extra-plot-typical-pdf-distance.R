@@ -6,6 +6,7 @@
 library(ggplot2)
 library(ggpubr)
 library(scales)
+library(ggsci)
 
 d <- seq(0, 10000, 0.1)
 
@@ -51,7 +52,8 @@ df <- rbind(dfc(y.weibull, 'Weibull'), dfc(y.gamma, 'Gamma'), dfc(y.lognormal, '
 df <- df[(df$d > 0) & (df$pdf > 0), ]
 
 g <- ggplot(df, aes(x = d, y = pdf, group=Distribution)) +
-  geom_line(aes(linetype=Distribution)) +
+  geom_line(aes(color=Distribution)) +
+  scale_color_igv()  +
   theme_minimal() +
   labs(x='d (km)', y='p(d)') +
   scale_x_log10(limits = c(0.1, 10^4),
