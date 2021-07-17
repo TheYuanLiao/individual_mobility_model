@@ -14,11 +14,11 @@ library(jsonlite)
 library(viridisLite)
 library(latticeExtra)
 
-title_region <- c('Sweden', 'The Netherlands', 'São Paulo, Brazil') # 'Sweden - West', 'Sweden - East',
+title_region <- c('Sweden', 'the Netherlands', 'São Paulo, Brazil') # 'Sweden - West', 'Sweden - East',
 names(title_region) <- c('sweden', 'netherlands', 'saopaulo') # 'sweden-west', 'sweden-east',
 
 plt.region <- function(region){    # Load grid search records
-    lst <- readLines(glue('results/para-search/parasearch-n_{region}.txt')) %>% lapply(fromJSON)
+    lst <- readLines(glue('results/para-search-r1/parasearch-n_{region}.txt')) %>% lapply(fromJSON)
     df <- bind_rows(lst)
     df <- df[(df$kl != 999) & (df$kl > 0),]
     para.op <- df[df$kl == min(df$kl), c('p', 'beta', 'gamma', 'kl')]
@@ -34,7 +34,7 @@ plt.region <- function(region){    # Load grid search records
 
     # showing data points on the same color scale
     g1 <- levelplot(kl ~ beta * p, df, xlab = TeX("$\\beta$"), ylab = TeX("$\\rho$"),
-                    main = title_region[region],
+                    main = paste0(title_region[region], '    '),
                     pretty = TRUE,
                     par.settings = list(axis.line = list(col = "gray"),
                                         strip.background = list(col = 'transparent'),
@@ -65,8 +65,7 @@ plt.region <- function(region){    # Load grid search records
                     col.regions = viridis(100)
     ) + layer_(panel.2dsmoother(..., n = 200))
 
-    G <- ggarrange(g1, g2, g3,
-                   ncol = 3, nrow = 1)
+    G <- ggarrange(g1, g2, g3, ncol = 3, nrow = 1)
     return(G)
 }
 

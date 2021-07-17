@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.metrics.pairwise import haversine_distances
 import lib.helpers as helpers
 import multiprocessing as mp
+import random
 
 
 class PreferentialReturn:
@@ -431,6 +432,22 @@ class NormalDistribution:
 
     def sample(self):
         return max(1, int(round(np.random.normal(self.mean, self.std))))
+
+
+class WeightedDistribution:
+    # This is from Swedish National Travel Survey
+    def __init__(self):
+        self.values = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 27]
+        self.weights = [3110, 11266, 4395, 4878, 2102, 1401, 691, 403, 206, 131, 71, 31, 28, 20, 11, 7, 2, 3, 2, 1, 1]
+
+    def describe(self):
+        return {
+            "name": "empirical-se",
+            "range": '2-27'
+        }
+
+    def sample(self):
+        return random.choices(self.values, weights=self.weights, k=1)[0]
 
 
 class VisitsFromFile:

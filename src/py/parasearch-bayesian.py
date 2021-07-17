@@ -32,7 +32,7 @@ class RegionParaSearch:
         self.visits = visits
 
     def region_data_load(self):
-        self.res = ROOT_dir + '/results/para-search/parasearch-n_' + self.region + '.txt'
+        self.res = ROOT_dir + '/results/para-search-r1/parasearch-n_' + self.region + '.txt'
         rg_ = gs_model.RegionDataPrep(region=self.region)
         rg_.load_zones_odm()
         rg_.load_geotweets()
@@ -52,7 +52,8 @@ class RegionParaSearch:
         dms, divergence_measure, _ = self.visits.visits2measure(visits=visits_total, home_locations=self.rg.home_locations)
         # append the result to the parasearch file
         dic = {'region': self.region, 'p': p, 'beta': beta, 'gamma': gamma,
-               'kl-baseline': self.rg.kl_baseline, 'kl': divergence_measure}
+               'kl-baseline': self.rg.kl_baseline, 'kl-deviation': self.rg.kl_deviation,
+               'kl': divergence_measure}
         pprint.pprint(dic)
         with open(self.res, 'a') as outfile:
             json.dump(dic, outfile)
@@ -78,7 +79,7 @@ if __name__ == '__main__':
             random_state=98,
         )
 
-        logger = JSONLogger(path=ROOT_dir + "/results/para-search/logs_" + gs.region + ".json")
+        logger = JSONLogger(path=ROOT_dir + "/results/para-search-r1/logs_" + gs.region + ".json")
         optimizer.subscribe(Events.OPTIMIZATION_STEP, logger)
         optimizer.maximize(
             init_points=8,

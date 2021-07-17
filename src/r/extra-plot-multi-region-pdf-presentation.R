@@ -68,7 +68,7 @@ df <- df_e[df_e$type==type,]
 g3 <- ggplot(df) +
     geom_point(aes(x = d, y = y, color=region_name), size=0.3, alpha=0.7) +
     theme_minimal() +
-    labs(x='Trip distance (km)', y='Probability density', title = 'All the regions') +
+    labs(x='Trip distance (km)', y='Probability density', title = '') +
     scale_color_manual(name = "Region", values = my_colors) +
     scale_x_log10(limits = c(0.1, 10^4),
                   breaks = trans_breaks("log10", function(x) 10^x),
@@ -80,6 +80,6 @@ g3 <- ggplot(df) +
 #    theme(legend.position = c(0.3, 0.3))
 
 G <- ggarrange(G1, g3, nrow = 1, ncol = 2, widths = c(1, 1))
-
-ggsave(filename = glue("figures/model_distributions.png"), plot=G,
-     width = 16, height = 4, unit = "in", dpi = 300)
+ggsave(filename = glue("figures/model_distributions.png"), plot=g3,
+     width = 8, height = 3, unit = "in", dpi = 300)
+#ggsave(filename = glue("figures/model_distributions.png"), plot=G, width = 16, height = 4, unit = "in", dpi = 300)

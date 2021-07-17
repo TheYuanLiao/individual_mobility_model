@@ -94,7 +94,7 @@ class MultiRegionParaGenerate:
                 region_sampling=models.RegionTransitionZipf(beta=beta, zipfs=1.2)
             ),
             n_days=days,
-            daily_trips_sampling=models.NormalDistribution(mean=3.14, std=1.8)
+            daily_trips_sampling=models.WeightedDistribution()
         )
         # Calculate visits
         self.visits = visit_factory.sample(self.geotweets)
@@ -107,7 +107,7 @@ class MultiRegionParaGenerate:
 
 
 if __name__ == '__main__':
-    runid = 6
+    runid = 7
     days = 260
 
     # The regions lacking ground truth data
@@ -115,7 +115,8 @@ if __name__ == '__main__':
                    'cebu', 'egypt', 'guadalajara', 'jakarta', 'johannesburg', 'kualalumpur',
                    'lagos', 'madrid', 'manila', 'mexicocity', 'moscow', 'nairobi',
                    'rio', 'saudiarabia', 'stpertersburg', 'surabaya']
-    p, gamma, beta = 0.74, 0.05, 0.14
+    p, gamma, beta = 0.922061, 0.200460, 0.117135
+
     for region2compute in region_list:
         # Start timing the code
         start_time = time.time()
@@ -131,9 +132,9 @@ if __name__ == '__main__':
         print(region2compute, "is done. Elapsed time was %g seconds" % (time.time() - start_time))
 
     # The regions with ground truth data
-    region_dict = {'sweden': (0.98, 0.12, 0.02),
-                   'netherlands': (0.78, 0.01, 0.23),
-                   'saopaulo': (0.46, 0.01, 0.17)}
+    region_dict = {'sweden': (0.981092, 0.235857, 0.014033),
+                   'netherlands': (0.797708, 0.173252, 0.174630),
+                   'saopaulo': (0.987384, 0.192272, 0.162742)}
     for region2compute, para in region_dict.items():
         p, gamma, beta = para[0], para[1], para[2]
         # Start timing the code

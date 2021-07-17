@@ -51,7 +51,7 @@ class RegionParaGenerate:
                                                 distances=self.rg.distances,
                                                 distance_quantiles=self.rg.distance_quantiles, gt_dms=self.rg.dms)
 
-    def visits_gen(self, type='calibration', p=None, gamma=None, beta=None):
+    def visits_gen_cross(self, type='calibration', p=None, gamma=None, beta=None, para_region=None):
         if type == 'calibration':
             tweets = self.rg.tweets_calibration
         else:
@@ -64,8 +64,9 @@ class RegionParaGenerate:
         model_odm = model_odm.reset_index()
         model_odm.columns = ['ozone', 'dzone', 'model']
         print('Saving model_odm... \n', model_odm.head())
-        model_odm.to_csv(ROOT_dir + '/dbs/' + self.region + '/odm_' + type + '.csv')
-        dms.to_csv(ROOT_dir + '/results/para-search-r1/' + self.region + '_' + type + '_distances.csv')
+        model_odm.to_csv(ROOT_dir + '/dbs/' + self.region + '/odm_' + type + '_' + para_region + '.csv')
+        dms.to_csv(ROOT_dir + '/results/para-search-r1/sensitivity/'
+                   + self.region + '_' + type + '_' + para_region + '_distances.csv')
 
 
 if __name__ == '__main__':
@@ -76,14 +77,22 @@ if __name__ == '__main__':
             line = json.loads(jsonObj)
             list_lines.append(line)
     df = pd.DataFrame(list_lines)
-    # ['sweden-west', 'sweden-east', 'netherlands', 'saopaulo', 'sweden-national']
-    for region2compute in ['sweden', 'netherlands', 'saopaulo']:
+    df.set_index('region', inplace=True)
+    df.loc['average'] = df.mean()  # Get the average value of parameters
+    df.reset_index(inplace=True)
+    region_list = ['sweden', 'netherlands', 'saopaulo']
+
+    for region2compute in region_list:
         # Start timing the code
         start_time = time.time()
-        dc = df.loc[df['region'] == region2compute, ['p', 'beta', 'gamma']].to_dict('records')[0]
+        print('Processing %s' % region2compute)
+        cross_region_list = [x for x in region_list if x != region2compute] + ['average']
         # prepare region data by initiating the class
         gs = RegionParaGenerate(region=region2compute)
         for tp in ('calibration', 'validation'):
             gs.region_data_load(type=tp)
-            gs.visits_gen(type=tp, p=dc['p'], gamma=dc['gamma'], beta=dc['beta'])
+            for region2cross in cross_region_list:
+                print('Processing %s with parameters for %s (%s)' % (region2compute, region2cross, tp))
+                dc = df.loc[df['region'] == region2cross, ['p', 'beta', 'gamma']].to_dict('records')[0]
+                gs.visits_gen_cross(type=tp, p=dc['p'], gamma=dc['gamma'], beta=dc['beta'], para_region=region2cross)
         print(region2compute, "is done. Elapsed time was %g seconds" % (time.time() - start_time))

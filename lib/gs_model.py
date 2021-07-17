@@ -14,7 +14,7 @@ import lib.netherlands as netherlands
 
 def get_repo_root():
     """Get the root directory of the repo."""
-    dir_in_repo = os.path.dirname(os.path.abspath('__file__')) # os.getcwd()
+    dir_in_repo = os.path.dirname(os.path.abspath('__file__'))  # os.getcwd()
     return subprocess.check_output('git rev-parse --show-toplevel'.split(),
                                    cwd=dir_in_repo,
                                    universal_newlines=True).rstrip()
@@ -67,6 +67,7 @@ class RegionDataPrep:
     RegionDataPrep will preload Twitter data for calibration, validation, home locations
     and ground truth (zones & data)
     """
+
     def __init__(self, region=None):
         if region is None:
             raise Exception("A region must be set")
@@ -80,8 +81,12 @@ class RegionDataPrep:
         self.home_locations = None
         self.tweets_calibration = None
         self.tweets_validation = None
-        self.kl_baseline = None
+        self.bm_odm = None  # benchmark odm
+        self.kl_baseline = None  # benchmark vs groundtruth
+        self.kl_deviation = None  # groundtruth vs groundtruth_true
         self.dms = None
+        self.dms_true = None
+        self.dms_bm = None
 
     def load_zones_odm(self):
         ground_truth = region_path[self.region]['gt']
@@ -109,17 +114,19 @@ class RegionDataPrep:
         if ground_truth.trip_distances is not None:
             self.trip_distances = ground_truth.trip_distances
             self.trip_distances.loc[:, 'distance'] = pd.cut(self.trip_distances.distance, bins, right=True)
-            self.dms = pd.DataFrame(self.trip_distances.groupby('distance')['weight'].sum())
-            self.dms.loc[:, 'weight'] = self.dms.loc[:, 'weight'] / sum(self.dms.loc[:, 'weight'])
-            self.dms = self.dms.rename(columns={'weight': 'groundtruth_sum'})
-        else:
-            self.dms = validation.DistanceMetrics().compute(
-                self.distance_quantiles,
-                [self.gt_odm],
-                ['groundtruth']
-            )
+            self.dms_true = pd.DataFrame(self.trip_distances.groupby('distance')['weight'].sum())
+            self.dms_true.loc[:, 'weight'] = self.dms_true.loc[:, 'weight'] / sum(self.dms_true.loc[:, 'weight'])
+            self.dms_true = self.dms_true.rename(columns={'weight': 'groundtruth_true_sum'})
+
+        # Calculate zone-based distance distribution
+        self.dms = validation.DistanceMetrics().compute(
+            self.distance_quantiles,
+            [self.gt_odm],
+            ['groundtruth']
+        )
 
     def load_geotweets(self, type='calibration', only_weekday=True):
+        # 1. Load geotweets
         if type == 'calibration':
             geotweets_path = region_path[self.region]['tweets_calibration']
         else:
@@ -148,14 +155,43 @@ class RegionDataPrep:
         # Ensure the tweets are sorted chronologically and the geometry is dropped
         if type == 'calibration':
             self.tweets_calibration = geotweets.sort_values(by=['userid', 'createdat']).drop(columns=['geometry'])
+            tweets = self.tweets_calibration.copy()
         else:
             self.tweets_validation = geotweets.sort_values(by=['userid', 'createdat']).drop(columns=['geometry'])
+            tweets = self.tweets_validation.copy()
+
+        # 2. Create benchmark odm from geotweets directly
+        tweets.loc[:, 'kind'] = 'region'
+        self.bm_odm = genericvalidation.visits_to_odm(tweets, self.zones, timethreshold_hours=24)
+        if self.region == 'sweden-national':
+            self.bm_odm[self.distances < 100] = 0
+        # Save bm_odm in dbs for visualization purpose
+        if type == 'calibration':
+            benchmark_path = ROOT_dir + '/dbs/' + self.region + '/odm_benchmark_c.csv'
+        else:
+            benchmark_path = ROOT_dir + '/dbs/' + self.region + '/odm_benchmark_v.csv'
+        if ~os.path.exists(benchmark_path):
+            bm_odm2save = self.bm_odm.copy()
+            bm_odm2save = bm_odm2save.reset_index()
+            bm_odm2save.columns = ['ozone', 'dzone', 'benchmark']
+            print('Saving bm_odm... \n', bm_odm2save.head())
+            bm_odm2save.to_csv(benchmark_path)
+
+        # Calculate zone-based distance distribution for benchmark
+        self.dms_bm = validation.DistanceMetrics().compute(
+            self.distance_quantiles,
+            [self.bm_odm],
+            ['benchmark']
+        )
 
     def kl_baseline_compute(self):
-        self.dms.loc[:, 'baseline_sum'] = 0
-        self.dms.loc[self.dms['groundtruth_sum'] != 0,
-                     'baseline_sum'] = 1 / len(self.dms.loc[self.dms['groundtruth_sum'] != 0, :])
-        self.kl_baseline = validation.DistanceMetrics().kullback_leibler(self.dms, titles=['groundtruth', 'baseline'])
+        # groundtruth, benchmark
+        self.dms.loc[:, 'benchmark_sum'] = self.dms_bm.loc[:, 'benchmark_sum'].values
+        if self.dms_true is not None:
+            # groundtruth, benchmark, groundtruth_true
+            self.dms.loc[:, 'groundtruth_true_sum'] = self.dms_true.loc[:, 'groundtruth_true_sum'].values
+            self.kl_deviation = validation.DistanceMetrics().kullback_leibler(self.dms, titles=['groundtruth', 'groundtruth_true'])
+        self.kl_baseline = validation.DistanceMetrics().kullback_leibler(self.dms, titles=['groundtruth', 'benchmark'])
 
 
 class VisitsGeneration:
@@ -164,6 +200,7 @@ class VisitsGeneration:
     It generate visits and compare the odm_model with the ground truth.
     It returns the kl divergence measure quantifying the similarity between the above two distance distributions.
     """
+
     def __init__(self, region=None, bbox=None, zones=None, odm=None,
                  distances=None, distance_quantiles=None, gt_dms=None):
         self.region = region
@@ -176,14 +213,14 @@ class VisitsGeneration:
 
     def visits_gen(self, geotweets=None, p=None, gamma=None, beta=None, days=None, homelocations=None):
         visit_factory = models.Sampler(
-                            model=models.PreferentialReturn(
-                                p=p,
-                                gamma=gamma,
-                                region_sampling=models.RegionTransitionZipf(beta=beta, zipfs=1.2)
-                            ),
-                            n_days=days,
-                            daily_trips_sampling=models.NormalDistribution(mean=3.14, std=1.8)
-                        )
+            model=models.PreferentialReturn(
+                p=p,
+                gamma=gamma,
+                region_sampling=models.RegionTransitionZipf(beta=beta, zipfs=1.2)
+            ),
+            n_days=days,
+            daily_trips_sampling=models.WeightedDistribution()
+        )
         # Calculate visits
         visits = visit_factory.sample(geotweets)
 
@@ -193,7 +230,7 @@ class VisitsGeneration:
                               left_index=True, right_index=True)
         return visits
 
-    def visits2measure(self, visits=None, home_locations=None, true_distance=False):
+    def visits2measure(self, visits=None, home_locations=None):
         if 'sweden-' in self.region:
             n_visits_before = visits.shape[0]
             home_locations_in_sampling = gpd.sjoin(home_locations, self.bbox)
@@ -208,6 +245,8 @@ class VisitsGeneration:
             [model_odm],
             ['model']
         )
-        dms.loc[:, 'groundtruth_sum'] = self.gt_dms.loc[:, 'groundtruth_sum'].values
+        for var in ['groundtruth_sum', 'groundtruth_true_sum', 'benchmark_sum']:
+            if var in self.gt_dms.columns:
+                dms.loc[:, var] = self.gt_dms.loc[:, var].values
         divergence_measure = validation.DistanceMetrics().kullback_leibler(dms, titles=['groundtruth', 'model'])
         return dms, divergence_measure, model_odm

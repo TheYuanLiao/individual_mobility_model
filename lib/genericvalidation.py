@@ -82,6 +82,26 @@ def align_visits_to_zones(visits, zones):
     return visits
 
 
+def align_raw_visits_to_zones(visits, zones):
+    print("Aligning visits to zones...")
+    regional_visits = visits.copy()
+    n_regional_visits_before = regional_visits.shape[0]
+    user_regions = regional_visits.groupby(['userid', 'region']).head(1)
+    user_zones = gpd.sjoin(user_regions, zones, op='intersects')[['region', 'zone']]
+    regional_visits = user_zones.merge(regional_visits, on=['userid', 'region'])
+    print("removed", n_regional_visits_before - regional_visits.shape[0], "region-visits due to missing zone geom")
+
+    # Recombine
+    columns = ['zone', 'createdat']
+    visits = regional_visits[columns]
+    print(visits.shape[0], "visits left after alignment")
+    # Re-sort to chronological order
+    visits = visits \
+        .reset_index().set_index(['userid', 'createdat']).sort_index() \
+        .reset_index().set_index('userid')
+    return visits
+
+
 def aligned_visits_to_odm(visits, multiindex, timethreshold_hours=None):
     print("Creating odm...")
     gaps_columns = ['zone']
@@ -114,7 +134,10 @@ def aligned_visits_to_odm(visits, multiindex, timethreshold_hours=None):
 
 def visits_to_odm(visits, zones, timethreshold_hours=None):
     crs_visits = crs_convert_visits(visits, zones)
-    aligned_visits = align_visits_to_zones(crs_visits, zones)
+    if timethreshold_hours is not None:
+        aligned_visits = align_raw_visits_to_zones(crs_visits, zones)
+    else:
+        aligned_visits = align_visits_to_zones(crs_visits, zones)
     odm = aligned_visits_to_odm(
         aligned_visits,
         pd.MultiIndex.from_product([
