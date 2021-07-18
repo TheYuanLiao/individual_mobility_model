@@ -27,9 +27,9 @@ region_names <- c('The Netherlands', 'Sweden', 'Austria','Australia',
                  )
 
 names(region_names) <- region_list
-df_e <- read.csv('results/multi-region_trips_rid_6_pcdf.csv')
-df_m <- read.csv('results/multi-region_trips_rid_6_pcdf_model.csv')
-df_para <- read.csv('results/multi-region_trips_rid_6_paras.csv')
+df_e <- read.csv('results/multi-region_trips_rid_7_pcdf.csv')
+df_m <- read.csv('results/multi-region_trips_rid_7_pcdf_model.csv')
+df_para <- read.csv('results/multi-region_trips_rid_7_paras.csv')
 df_e$region_name <- unlist(lapply(df_e$region, function(x){return(region_names[x])}))
 df_m$region_name <- unlist(lapply(df_m$region, function(x){return(region_names[x])}))
 

@@ -9,7 +9,7 @@ library(ggpubr)
 library(PerformanceAnalytics)
 library(corrplot)
 
-df <- read.csv('results/multi-region_rid_6.csv')
+df <- read.csv('results/multi-region_rid_7.csv')
 df <- df[df$region != 'manila',]
 df$geonum_user <- df$num_geotweets / df$num_users
 df2exp <- df[, c('ks', 'r2', 'city', 'median', 'gdp_capita', 'para1', 'para2', 'area', 'pop',

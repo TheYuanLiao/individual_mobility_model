@@ -101,9 +101,9 @@ if __name__ == '__main__':
                    'cebu', 'egypt', 'guadalajara', 'jakarta', 'johannesburg', 'kualalumpur', 'nairobi',
                    'lagos', 'madrid', 'manila', 'mexicocity', 'moscow',
                    'rio', 'saudiarabia', 'stpertersburg', 'surabaya']
-    runid = 6
+    runid = 7
     # If agg set to False, then the trips will be logged, otherwise, the aggregate statistics will be logged
-    agg = False
+    agg = True
     # parallelize the processing of geotagged tweets of multiple regions
     pool = mp.Pool(mp.cpu_count())
     pool.starmap(region_visits_proc, [(r, runid, agg, ) for r in region_list])
