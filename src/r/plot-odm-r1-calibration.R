@@ -7,7 +7,7 @@ library(ggplot2)
 library(dplyr)
 library(viridis)
 library(ggpubr)
-
+library(scales)
 
 ## Sweden g1 - g2
 region <- 'sweden' # netherlands, saopaulo
@@ -39,10 +39,14 @@ g1 <- ggplot() +
   geom_point(data = df_stats, aes(x=gt, y=center), color='#3c40c6', shape = 21, fill = "white", size = 2) +
 
   geom_abline(intercept = 0, slope = 1, size=0.3, color='gray45') +
-  scale_x_continuous(trans='log10', limits = c(min(df[df$gt != 0, 'gt']), 0.01)) +
-  scale_y_continuous(trans='log10', limits = c(min(df[df$gt != 0, 'gt']), 0.01)) +
+  scale_x_log10(limits = c(min(df[df$gt != 0, 'gt']), 0.01),
+                breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", scales::math_format(10^.x))) +
+  scale_y_log10(limits = c(min(df[df$gt != 0, 'gt']), 0.01),
+                breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", scales::math_format(10^.x))) +
   labs(x = "Ground truth", y = 'Model') +
-  theme(legend.position = 'top',
+  theme(legend.position = 'top', legend.key.height= unit(0.3, 'cm'),
         plot.margin = margin(1,0.5,0,0, "cm"))
 
 g2 <- ggplot() +
@@ -56,10 +60,14 @@ g2 <- ggplot() +
   geom_point(data = df_stats, aes(x=gt + 1e-10, y=center_b), color='#05c46b', shape = 21, fill = "white", size = 2) +
 
   geom_abline(intercept = 0, slope = 1, size=0.3, color='gray45') +
-  scale_x_continuous(trans='log10', limits = c(min(df[df$gt != 0, 'gt']), 0.01)) +
-  scale_y_continuous(trans='log10', limits = c(min(df[df$gt != 0, 'gt']), 0.01)) +
+  scale_x_log10(limits = c(min(df[df$gt != 0, 'gt']), 0.01),
+                breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", scales::math_format(10^.x))) +
+  scale_y_log10(limits = c(min(df[df$gt != 0, 'gt']), 0.01),
+                breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", scales::math_format(10^.x))) +
   labs(x = "Ground truth", y = 'Benchmark') +
-  theme(legend.position = 'top',
+  theme(legend.position = 'top', legend.key.height= unit(0.3, 'cm'),
         plot.margin = margin(1,0.5,0,0, "cm"))
 
 
@@ -93,10 +101,14 @@ g3 <- ggplot() +
   geom_point(data = df_stats, aes(x=gt, y=center), color='#3c40c6', shape = 21, fill = "white", size = 2) +
 
   geom_abline(intercept = 0, slope = 1, size=0.3, color='gray45') +
-  scale_x_continuous(trans='log10', limits = c(min(df[df$gt != 0, 'gt']), 0.01)) +
-  scale_y_continuous(trans='log10', limits = c(min(df[df$gt != 0, 'gt']), 0.01)) +
+  scale_x_log10(limits = c(min(df[df$gt != 0, 'gt']), 0.01),
+                breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", scales::math_format(10^.x))) +
+  scale_y_log10(limits = c(min(df[df$gt != 0, 'gt']), 0.01),
+                breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", scales::math_format(10^.x))) +
   labs(x = "Ground truth", y = 'Model') +
-  theme(legend.position = 'top',
+  theme(legend.position = 'top', legend.key.height= unit(0.3, 'cm'),
         plot.margin = margin(1,0.5,0,0, "cm"))
 
 g4 <- ggplot() +
@@ -110,10 +122,14 @@ g4 <- ggplot() +
   geom_point(data = df_stats, aes(x=gt + 1e-10, y=center_b), color='#05c46b', shape = 21, fill = "white", size = 2) +
 
   geom_abline(intercept = 0, slope = 1, size=0.3, color='gray45') +
-  scale_x_continuous(trans='log10', limits = c(min(df[df$gt != 0, 'gt']), 0.01)) +
-  scale_y_continuous(trans='log10', limits = c(min(df[df$gt != 0, 'gt']), 0.01)) +
+  scale_x_log10(limits = c(min(df[df$gt != 0, 'gt']), 0.01),
+                breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", scales::math_format(10^.x))) +
+  scale_y_log10(limits = c(min(df[df$gt != 0, 'gt']), 0.01),
+                breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", scales::math_format(10^.x))) +
   labs(x = "Ground truth", y = 'Benchmark') +
-  theme(legend.position = 'top',
+  theme(legend.position = 'top', legend.key.height= unit(0.3, 'cm'),
         plot.margin = margin(1,0.5,0,0, "cm"))
 
 ## Sao Paulo g5 - g6
@@ -146,10 +162,14 @@ g5 <- ggplot() +
   geom_point(data = df_stats, aes(x=gt, y=center), color='#3c40c6', shape = 21, fill = "white", size = 2) +
 
   geom_abline(intercept = 0, slope = 1, size=0.3, color='gray45') +
-  scale_x_continuous(trans='log10', limits = c(min(df[df$gt != 0, 'gt']), 0.01)) +
-  scale_y_continuous(trans='log10', limits = c(min(df[df$gt != 0, 'gt']), 0.01)) +
+  scale_x_log10(limits = c(min(df[df$gt != 0, 'gt']), 0.01),
+                breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", scales::math_format(10^.x))) +
+  scale_y_log10(limits = c(min(df[df$gt != 0, 'gt']), 0.01),
+                breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", scales::math_format(10^.x))) +
   labs(x = "Ground truth", y = 'Model') +
-  theme(legend.position = 'top',
+  theme(legend.position = 'top', legend.key.height= unit(0.3, 'cm'),
         plot.margin = margin(1,0.5,0,0, "cm"))
 
 
@@ -164,15 +184,19 @@ g6 <- ggplot() +
   geom_point(data = df_stats, aes(x=gt + 1e-10, y=center_b), color='#05c46b', shape = 21, fill = "white", size = 2) +
 
   geom_abline(intercept = 0, slope = 1, size=0.3, color='gray45') +
-  scale_x_continuous(trans='log10', limits = c(min(df[df$gt != 0, 'gt']), 0.01)) +
-  scale_y_continuous(trans='log10', limits = c(min(df[df$gt != 0, 'gt']), 0.01)) +
+  scale_x_log10(limits = c(min(df[df$gt != 0, 'gt']), 0.01),
+                breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", scales::math_format(10^.x))) +
+  scale_y_log10(limits = c(min(df[df$gt != 0, 'gt']), 0.01),
+                breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", scales::math_format(10^.x))) +
   labs(x = "Ground truth", y = 'Benchmark') +
-  theme(legend.position = 'top',
+  theme(legend.position = 'top', legend.key.height= unit(0.3, 'cm'),
         plot.margin = margin(1,0.5,0,0, "cm"))
 
 h <- 3.3 * 3
 w <- 3 * 2
 G <- ggarrange(g1, g2, g3, g4, g5, g6,
                ncol = 2, nrow = 3, labels = c('(a)', '(b)', '(c)', '(d)', '(e)', '(f)'))
-ggsave(filename = "figures/od_pairs_validation.png", plot=G,
+ggsave(filename = "figures/od_pairs_calibration.png", plot=G,
        width = w, height = h, unit = "in", dpi = 300)

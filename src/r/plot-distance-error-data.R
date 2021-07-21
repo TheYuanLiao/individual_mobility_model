@@ -1,85 +1,134 @@
-# Title     : Visualise the distance error between Euclidean distance and network distance
-# Objective : Data-based results from Sweden and the Netherlands
+# Title     : Distance difference between Haversine distance and network distance
+# Objective : Based on travel survey
 # Created by: Yuan Liao
-# Created on: 2021-07-17
+# Created on: 2021-07-19
 
-library(dplyr)
 library(ggplot2)
-library(rjson)
-library(glue)
+library(dplyr)
+library(viridis)
 library(ggpubr)
-library(latex2exp)
+library(scales)
+options(scipen=10000)
 
-title_region <- c('Sweden', 'The Netherlands')
-names(title_region) <- c('sweden', 'netherlands')
+# Load distances
+df.total <- read.csv('dbs/distance_error_data.csv')
+df.total <- df.total[df.total$distance_network >= df.total$distance, ]
+df.total$diff <- df.total$distance_network/df.total$distance
 
-lst <- readLines('results/summary.txt') %>% lapply(fromJSON)
-df <- bind_rows(lst)
-df <- df[4:6,]
+# Sweden
+df <- df.total[df.total$region=='sweden', ]
+df$dg <- cut(df$distance, breaks = unlist(lapply(seq(-1, 4, 5/30), function(x){10^(x)})))
 
-rs_path <- 'results/para-search-r1/'
+df_stats <- df %>%
+  group_by(dg)  %>%
+  summarise(distance = median(distance),
+            center = median(distance_network),
+            lower = quantile(distance_network, 0.25),
+            upper = quantile(distance_network, 0.75),
+            center_diff = median(diff),
+            lower_diff = quantile(diff, 0.25),
+            upper_diff = quantile(diff, 0.75))
 
-dist_upper <- function(x) {
-  x_s <- unlist(strsplit(x, ","))
-  return( as.numeric(substr(x_s[2], 2, nchar(x_s[2]) - 1)))
-}
+g1 <- ggplot(data = df) +
+  theme_minimal() +
+  # Raw data
+  geom_bin2d(aes(x=distance, y=distance_network), alpha=0.2) +
+  scale_fill_gradient(name = 'No. of trips', low = "steelblue", high = 'coral') +
 
+  # Distances by groups
+  geom_linerange(data = df_stats, aes(x=distance, ymin=lower, ymax=upper), color='steelblue', size=0.5) +
+  geom_point(data = df_stats, aes(x=distance, y=center), color='steelblue', shape = 21, fill = "white", size = 2) +
 
-plt <- function(df, gt_true, x_lab, y_lab) {
-  GT <- "Euclidean distance \n"
-  ctype <- c('#ffa801', '#ffa801')
-  names(ctype) <- c(GT, gt_true)
-  ltype <- c('solid', 'dashed')
-  names(ltype) <- c(GT, gt_true)
-  g <- ggplot() + theme_minimal() +
-    geom_line(data = df, aes(x=d, y = gt, color=GT, linetype=GT), size=0.6) +
-    geom_line(data = df, aes(x=d, y = gt_t, color=gt_true, linetype=gt_true), size=0.3) +
-    geom_point(data = df, aes(x=d, y=0.41), shape=108, size=0.5) +
-    scale_x_log10() +
-    scale_color_manual(name = "", values = ctype,
-                       breaks=c(GT, gt_true)) +
-    scale_linetype_manual(name = "", values = ltype,
-                          breaks=c(GT, gt_true)) +
-    labs(x = x_lab, y = y_lab) +
-    scale_y_continuous(limits = c(0.4, NA)) +
-    theme(legend.position = c(0.55, 0.4),
-          plot.margin = margin(1,0,0,0, "cm"))
-  return(g)
-}
+  geom_abline(intercept = 0, slope = 1, size=0.3, color='gray45') +
+  labs(x = "Trip distance (Euclidean, km)", y = 'Reported travel distance (km)') +
+  scale_x_log10(limits = c(0.1, 1500),
+                breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", scales::math_format(10^.x))) +
+  scale_y_log10(limits = c(0.1, 1500),
+                breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", scales::math_format(10^.x))) +
+  theme(legend.position = 'top', legend.key.height= unit(0.3, 'cm'),
+        plot.margin = margin(1,0.5,0,0, "cm"))
 
-reg_plt <- function(region, title_region, result, rs_path, df, x_lab, y_lab) {
-  result <- df[df$region == region, 'kl-deviation']
+g2 <- ggplot(data = df) +
+  theme_minimal() +
+  # Raw data
+  geom_bin2d(aes(x=distance, y=diff), alpha=0.2) +
+  scale_fill_gradient(name = 'No. of trips', low = "steelblue", high = 'coral') +
 
-  # model-calibration
-  df <- read.csv(paste0(rs_path, region, '_calibration_distances.csv'))
-  df <- df %>%
-    mutate(gt_t = cumsum(groundtruth_true_sum),
-           gt = cumsum(groundtruth_sum)) %>%
-    filter(gt_t > 0 & gt > 0)
+  # Distances by groups
+  geom_linerange(data = df_stats, aes(x=distance, ymin=lower_diff, ymax=upper_diff), color='steelblue', size=0.5) +
+  geom_point(data = df_stats, aes(x=distance, y=center_diff), color='steelblue', shape = 21, fill = "white", size = 2) +
 
-  df$d <- sapply(df$distance, dist_upper)
-
-
-  # line names and optimal parameters
-  gt_true <- paste0("True distance = ", signif(result$`kl-deviation`, digits=3))
-
-  # plot calibration
-  g <- plt(df=df, gt_true = gt_true, x_lab = x_lab, y_lab = y_lab)
-
-  return(g)
-}
-
-region <- 'sweden'
-g_se <- reg_plt(region, title_region, result, rs_path, df, 'Distance (log, km)', 'Cumulative share of trips')
-
-region <- 'netherlands'
-g_nt <- reg_plt(region, title_region, result, rs_path, df, "Distance (log, km)", '')
+  geom_hline(yintercept=median(df$diff), size=0.3, color='black') +
+  annotate("text", x = 100, y = 5, label = sprintf('Median ratio = %.1f', median(df$diff))) +
+  labs(x = "Trip distance (Euclidean, km)", y = 'Distance ratio') +
+  scale_x_log10(limits = c(0.1, 1500),
+                breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", scales::math_format(10^.x))) +
+  scale_y_log10(limits = c(1, 100), breaks = c(1, 10, 100), labels = c(1, 10, 100)) +
+  theme(legend.position = 'top', legend.key.height= unit(0.3, 'cm'),
+        plot.margin = margin(1,0.5,0,0, "cm"))
 
 
-# save plots
-h <- 3
+# the Netherlands
+df <- df.total[df.total$region=='netherlands', ]
+df$dg <- cut(df$distance, breaks = unlist(lapply(seq(-1, 3, 4/30), function(x){10^(x)})))
+
+df_stats <- df %>%
+  group_by(dg)  %>%
+  summarise(distance = median(distance),
+            center = median(distance_network),
+            lower = quantile(distance_network, 0.25),
+            upper = quantile(distance_network, 0.75),
+            center_diff = median(diff),
+            lower_diff = quantile(diff, 0.25),
+            upper_diff = quantile(diff, 0.75))
+
+g3 <- ggplot(data = df) +
+  theme_minimal() +
+  # Raw data
+  geom_bin2d(aes(x=distance, y=distance_network), alpha=0.2) +
+  scale_fill_gradient(name = 'No. of trips', low = "steelblue", high = 'coral') +
+
+  # Distances by groups
+  geom_linerange(data = df_stats, aes(x=distance, ymin=lower, ymax=upper), color='steelblue', size=0.5) +
+  geom_point(data = df_stats, aes(x=distance, y=center), color='steelblue', shape = 21, fill = "white", size = 2) +
+
+  geom_abline(intercept = 0, slope = 1, size=0.3, color='gray45') +
+  labs(x = "Trip distance (Euclidean, km)", y = 'Reported travel distance (km)') +
+  scale_x_log10(limits = c(0.1, 1500),
+                breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", scales::math_format(10^.x))) +
+  scale_y_log10(limits = c(0.1, 1500),
+                breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", scales::math_format(10^.x))) +
+  theme(legend.position = 'top', legend.key.height= unit(0.3, 'cm'),
+        plot.margin = margin(1,0.5,0,0, "cm"))
+
+g4 <- ggplot(data = df) +
+  theme_minimal() +
+  # Raw data
+  geom_bin2d(aes(x=distance, y=diff), alpha=0.2) +
+  scale_fill_gradient(name = 'No. of trips', low = "steelblue", high = 'coral') +
+
+  # Distances by groups
+  geom_linerange(data = df_stats, aes(x=distance, ymin=lower_diff, ymax=upper_diff), color='steelblue', size=0.5) +
+  geom_point(data = df_stats, aes(x=distance, y=center_diff), color='steelblue', shape = 21, fill = "white", size = 2) +
+
+  geom_hline(yintercept=median(df$diff), size=0.3, color='black') +
+  annotate("text", x = 100, y = 5, label = sprintf('Median ratio = %.1f', median(df$diff))) +
+  labs(x = "Trip distance (Euclidean, km)", y = 'Distance ratio') +
+  scale_x_log10(limits = c(0.1, 1500),
+                breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", scales::math_format(10^.x))) +
+  scale_y_log10(limits = c(1, 100), breaks = c(1, 10, 100), labels = c(1, 10, 100)) +
+  theme(legend.position = 'top', legend.key.height= unit(0.3, 'cm'),
+        plot.margin = margin(1,0.5,0,0, "cm"))
+
+h <- 3.3 * 2
 w <- 3 * 2
-G <- ggarrange(g_se, g_nt,
-               ncol = 2, nrow = 1, labels = c('(a)', '(b)'))
-ggsave(filename = glue("figures/distance_error_data.png"), plot=G,
+G <- ggarrange(g1, g2, g3, g4,
+               ncol = 2, nrow = 2, labels = c('(a)', '(b)', '(c)', '(d)'))
+ggsave(filename = "figures/distance_error_data.png", plot=G,
        width = w, height = h, unit = "in", dpi = 300)

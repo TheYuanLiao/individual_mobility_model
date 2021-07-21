@@ -6,6 +6,97 @@ import sqlite3
 from sklearn.cluster import DBSCAN
 import math
 import os
+import osmnx as ox
+
+
+def osm_downloader(boundary=None, osm_path=None, regenerating_shp=False):
+    """
+    Download drive network within a certain geographical boundary.
+    :param boundary:
+    geodataframe of the area for downloading the network.
+
+    :param osm_path:
+    file path to save the network in .shp and .graphml.
+
+    :param regenerating_shp:
+    if needs to regenerating the shape file.
+
+    :return:
+    None
+    """
+    minx, miny, maxx, maxy = boundary.geometry.total_bounds
+    new_network = osm_path + 'drive.graphml'
+    new_network_shp = osm_path + 'drive.shp'
+
+    def shp_processor(G, new_network_shp):
+        print('Processing graphml to GeoDataframe...')
+        gdf_n = ox.graph_to_gdfs(G)
+        edge = gdf_n[1]
+        edge = edge.loc[:, ['geometry', 'highway', 'junction', 'length', 'maxspeed', 'name', 'oneway',
+                            'osmid', 'u', 'v', 'width', 'lanes']]
+        fields = ['osmid', 'u', 'v', 'length', 'maxspeed', 'oneway']
+        df_inter = pd.DataFrame()
+        for f in fields:
+            df_inter[f] = edge[f].astype(str)
+        gdf_edge = gpd.GeoDataFrame(df_inter, geometry=edge["geometry"])
+        gdf_edge = gdf_edge.rename(columns={'osmid': 'osm_id', 'maxspeed': 'max_speed'})
+
+        print('Saving as shp...')
+        gdf_edge.to_file(new_network_shp)
+
+    if not os.path.exists(new_network):
+        print('Downloading graphml...')
+        G = ox.graph_from_bbox(maxy, miny, maxx, minx, network_type='drive')
+        print('Saving as graphml...')
+        ox.save_graphml(G, filepath=new_network)
+        if not os.path.exists(new_network_shp):
+            shp_processor(G, new_network_shp)
+    else:
+        if regenerating_shp:
+            print('Loading graphml...')
+            G = ox.load_graphml(new_network)
+            shp_processor(G, new_network_shp)
+        if not os.path.exists(new_network_shp):
+            print('Loading graphml...')
+            G = ox.load_graphml(new_network)
+            shp_processor(G, new_network_shp)
+        else:
+            print('Drive networks exist. Skip downloading.')
+
+
+def filter_trips(df=None, boundary=None):
+    """
+    Filter trips within a certain geographical boundary.
+    :param boundary:
+    geodataframe of the area for downloading the network.
+
+    :param df, dataframe:
+    [userid, timeslot, day_n, distance, latitude, longitude, latitude_d, longitude_d].
+
+    :return:
+    Filtered trips, dataframe
+    [userid, timeslot, day_n, distance, latitude, longitude, latitude_d, longitude_d].
+    """
+    # Origin
+    print('Filtering origins...')
+    gdf = gpd.GeoDataFrame(
+        df,
+        crs="EPSG:4326",
+        geometry=gpd.points_from_xy(df.longitude, df.latitude)
+    )
+    gdf = gpd.clip(gdf, boundary.convex_hull)
+    gdf.drop(columns=['geometry'], inplace=True)
+
+    # Destination
+    print('Filtering destinations...')
+    gdf = gpd.GeoDataFrame(
+        gdf,
+        crs="EPSG:4326",
+        geometry=gpd.points_from_xy(gdf.longitude_d, gdf.latitude_d)
+    )
+    gdf = gpd.clip(gdf, boundary.convex_hull)
+    gdf.drop(columns=['geometry'], inplace=True)
+    return gdf
 
 
 def cluster(ts, eps_km=0.1, min_samples=1):

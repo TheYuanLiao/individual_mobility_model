@@ -8,6 +8,7 @@ sweden:
   name: Sweden
   country: Sweden
   metric_epsg: EPSG:3006
+  utm_epsg: EPSG:3006
   zones_path: /dbs/sweden/alla_lan/alla_lan.shp
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/sweden/SWE_adm2.shp
@@ -24,6 +25,7 @@ netherlands:
   name: The Netherlands
   country: The Netherlands
   metric_epsg: EPSG:4326
+  utm_epsg: EPSG:32632
   zones_path: /dbs/netherlands/provinces.shp
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/netherlands/NLD_adm2.shp
@@ -40,6 +42,7 @@ australia:
   name: Australia
   country: Australia
   metric_epsg: EPSG:8058
+  utm_epsg: EPSG:32753
   zones_path: /dbs/australia/zones/zones.shp
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/australia/AUS_adm2.shp
@@ -56,6 +59,7 @@ austria:
   name: Austria
   country: Austria
   metric_epsg: EPSG:4326
+  utm_epsg: EPSG:32633
   zones_path: /dbs/austria/zones/gadm36_AUT_3.shp
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/austria/zones/gadm36_AUT_3.shp
@@ -72,6 +76,7 @@ barcelona:
   name: Barcelona, Spain
   country: Spain
   metric_epsg: EPSG:4326
+  utm_epsg: EPSG:32631
   zones_path: /dbs/barcelona/zones/gadm36_ESP_4.shp
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/spain/ESP_adm3.shp
@@ -88,6 +93,7 @@ madrid:
   name: Madrid, Spain
   country: Spain
   metric_epsg: EPSG:25830
+  utm_epsg: EPSG:25830
   zones_path: /dbs/madrid/zones/zones.shp
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/spain/ESP_adm3.shp
@@ -104,6 +110,7 @@ egypt:
   name: Egypt
   country: Egypt
   metric_epsg: EPSG:4326
+  utm_epsg: EPSG:23035
   zones_path: /dbs/egypt/zones/zones.shp
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/egypt/EGY_adm2.shp
@@ -120,6 +127,7 @@ jakarta:
   name: Jakarta, Indonesia
   country: Indonesia
   metric_epsg: EPSG:4326
+  utm_epsg: EPSG:32748
   zones_path: /dbs/jakarta/zones/zones.shp
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/indonesia/IDN_adm2.shp
@@ -136,6 +144,7 @@ surabaya:
   name: Surabaya, Indonesia
   country: Indonesia
   metric_epsg: EPSG:4326
+  utm_epsg: EPSG:32749
   zones_path: /dbs/surabaya/zones/zones.shp
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/indonesia/IDN_adm2.shp
@@ -152,6 +161,7 @@ johannesburg:
   name: Johannesburg, South Africa
   country: South Africa
   metric_epsg: EPSG:4326
+  utm_epsg: EPSG:32734
   zones_path: /dbs/johannesburg/zones/zones.shp
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/southafrica/ZAF_adm2.shp
@@ -168,6 +178,7 @@ capetown:
   name: Cape Town, South Africa
   country: South Africa
   metric_epsg: EPSG:4326
+  utm_epsg: EPSG:32734
   zones_path: /dbs/capetown/zones/zones.shp
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/southafrica/ZAF_adm2.shp
@@ -184,6 +195,7 @@ kualalumpur:
   name: Kuala Lumpur, Malaysia
   country: Malaysia
   metric_epsg: EPSG:4326
+  utm_epsg: EPSG:32647
   zones_path: /dbs/kualalumpur/zones/zones.shp
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/malaysia/MYS_adm1.shp
@@ -200,6 +212,7 @@ lagos:
   name: Lagos, Nigeria
   country: Nigeria
   metric_epsg: EPSG:4326
+  utm_epsg: EPSG:26332
   zones_path: /dbs/lagos/zones/zones.shp
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/nigeria/NGA_adm2.shp
@@ -216,6 +229,7 @@ manila:
   name: Manila, Philippines
   country: Philippines
   metric_epsg: EPSG:4326
+  utm_epsg: EPSG:32651
   zones_path: /dbs/manila/zones/zones.shp
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/philippines/PHL_adm1.shp
@@ -232,6 +246,7 @@ cebu:
   name: Cebu, Philippines
   country: Philippines
   metric_epsg: EPSG:4326
+  utm_epsg: EPSG:32651
   zones_path: /dbs/cebu/zones/zones.shp
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/philippines/PHL_adm1.shp
@@ -248,6 +263,7 @@ mexicocity:
   name: Mexico City, Mexico
   country: Mexico
   metric_epsg: EPSG:4326
+  utm_epsg: EPSG:6371
   zones_path: /dbs/mexicocity/zones/zones.shp
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/mexico/MEX_adm2_r.shp
@@ -264,6 +280,7 @@ guadalajara:
   name: Guadalajara, Mexico
   country: Mexico
   metric_epsg: EPSG:4326
+  utm_epsg: EPSG:32613
   zones_path: /dbs/guadalajara/zones/zones.shp
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/mexico/MEX_adm2.shp
@@ -280,6 +297,7 @@ moscow:
   name: Moscow, Russia
   country: Russian Federation
   metric_epsg: EPSG:4326
+  utm_epsg: EPSG:32637
   zones_path: /dbs/moscow/zones/zones.shp
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/russia/RUS_adm3.shp
@@ -296,6 +314,7 @@ stpertersburg:
   name: Saint Petersburg, Russia
   country: Russian Federation
   metric_epsg: EPSG:4326
+  utm_epsg: EPSG:32635
   zones_path: /dbs/stpertersburg/zones/zones.shp
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/russia/RUS_adm3.shp
@@ -312,6 +331,7 @@ nairobi:
   name: Nairobi, Kenya
   country: Kenya
   metric_epsg: EPSG:4326
+  utm_epsg: EPSG:32637
   zones_path: /dbs/nairobi/zones/zones.shp
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/kenya/ken_admbnda_adm2_iebc_20191031.shp
@@ -328,6 +348,7 @@ rio:
   name: Rio de Janeiro, Brazil
   country: Brazil
   metric_epsg: EPSG:4326
+  utm_epsg: EPSG:32723
   zones_path: /dbs/rio/zones/zones.shp
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/brazil/Brazil_Polygon.shp
@@ -344,6 +365,7 @@ saopaulo:
   name: São Paulo, Brazil
   country: Brazil
   metric_epsg: EPSG:22523
+  utm_epsg: EPSG:22523
   zones_path: /dbs/saopaulo/zones/zones.shp
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/brazil/Brazil_Polygon.shp
@@ -360,6 +382,7 @@ saudiarabia:
   name: Saudi Arabia
   country: Saudi Arabia
   metric_epsg: EPSG:4326
+  utm_epsg: EPSG:32638
   zones_path: /dbs/saudiarabia/zones/gadm36_SAU_1.shp
   country_metric_epsg: EPSG:4326
   country_zones_path: /dbs/countries/saudiarabia/saudia_district_29f.shp
