@@ -10,9 +10,9 @@ library(ggpubr)
 
 df <- read.csv('results/para-search-r1/sensitivity_summary.csv')
 df$region <- factor(df$region, levels=c('sweden', 'netherlands', 'saopaulo'),
-                    labels=c('Sweden', 'the Netherlands', 'São Paulo'))
+                    labels=c('SE', 'NL', 'SP'))
 df$region2cross <- factor(df$region2cross, levels=c('sweden', 'netherlands', 'saopaulo', 'average'),
-                          labels=c('Sweden', 'the Netherlands', 'São Paulo', 'Average'))
+                          labels=c('SE', 'NL', 'SP', 'AVG'))
 
 # Plot the matrix
 min_g_c <- min(df[(df$type == 'calibration') & (df$gain > 0), 'gain'])
@@ -27,8 +27,7 @@ g1 <- ggplot(df[df$type == 'calibration', ], aes(x=region2cross, y=region)) +
   theme_minimal() +
   theme(legend.position = "bottom", legend.key.width = unit(0.5, "cm"),
         panel.grid = element_blank()) +
-  theme(axis.text.x = element_text(angle = 30, vjust=0.7),
-        plot.margin = margin(1,0,0,0, "cm")) +
+  theme(plot.margin = margin(1,0,0,0, "cm")) + # axis.text.x = element_text(angle = 30, vjust=0.7),
   labs(x='Model parameters', y='Applying region') +
   coord_equal() +
   scale_y_discrete(limits=rev)
@@ -41,8 +40,7 @@ g2 <- ggplot(df[df$type == 'validation', ], aes(x=region2cross, y=region)) +
   theme_minimal() +
   theme(legend.position = "bottom", legend.key.width = unit(0.5, "cm"),
         panel.grid = element_blank()) +
-  theme(axis.text.x = element_text(angle = 30, vjust=0.7),
-        plot.margin = margin(1,0,0,0, "cm")) +
+  theme(plot.margin = margin(1,0,0,0, "cm")) + # axis.text.x = element_text(angle = 30, vjust=0.7),
   coord_equal() +
   scale_y_discrete(limits=rev) +
   labs(x='Model parameters', y='Applying region')

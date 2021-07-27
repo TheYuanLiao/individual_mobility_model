@@ -45,7 +45,7 @@ g1 <- ggplot() +
   scale_y_log10(limits = c(min(df[df$gt != 0, 'gt']), 0.01),
                 breaks = trans_breaks("log10", function(x) 10^x),
                 labels = trans_format("log10", scales::math_format(10^.x))) +
-  labs(x = "Ground truth", y = 'Model') +
+  labs(x = "Ground truth", y = 'Proposed model') +
   theme(legend.position = 'top', legend.key.height= unit(0.3, 'cm'),
         plot.margin = margin(1,0.5,0,0, "cm"))
 
@@ -66,7 +66,7 @@ g2 <- ggplot() +
   scale_y_log10(limits = c(min(df[df$gt != 0, 'gt']), 0.01),
                 breaks = trans_breaks("log10", function(x) 10^x),
                 labels = trans_format("log10", scales::math_format(10^.x))) +
-  labs(x = "Ground truth", y = 'Benchmark') +
+  labs(x = "Ground truth", y = 'Benchmark model') +
   theme(legend.position = 'top', legend.key.height= unit(0.3, 'cm'),
         plot.margin = margin(1,0.5,0,0, "cm"))
 
@@ -107,7 +107,7 @@ g3 <- ggplot() +
   scale_y_log10(limits = c(min(df[df$gt != 0, 'gt']), 0.01),
                 breaks = trans_breaks("log10", function(x) 10^x),
                 labels = trans_format("log10", scales::math_format(10^.x))) +
-  labs(x = "Ground truth", y = 'Model') +
+  labs(x = "Ground truth", y = 'Proposed model') +
   theme(legend.position = 'top', legend.key.height= unit(0.3, 'cm'),
         plot.margin = margin(1,0.5,0,0, "cm"))
 
@@ -128,7 +128,7 @@ g4 <- ggplot() +
   scale_y_log10(limits = c(min(df[df$gt != 0, 'gt']), 0.01),
                 breaks = trans_breaks("log10", function(x) 10^x),
                 labels = trans_format("log10", scales::math_format(10^.x))) +
-  labs(x = "Ground truth", y = 'Benchmark') +
+  labs(x = "Ground truth", y = 'Benchmark model') +
   theme(legend.position = 'top', legend.key.height= unit(0.3, 'cm'),
         plot.margin = margin(1,0.5,0,0, "cm"))
 
@@ -168,7 +168,7 @@ g5 <- ggplot() +
   scale_y_log10(limits = c(min(df[df$gt != 0, 'gt']), 0.01),
                 breaks = trans_breaks("log10", function(x) 10^x),
                 labels = trans_format("log10", scales::math_format(10^.x))) +
-  labs(x = "Ground truth", y = 'Model') +
+  labs(x = "Ground truth", y = 'Proposed model') +
   theme(legend.position = 'top', legend.key.height= unit(0.3, 'cm'),
         plot.margin = margin(1,0.5,0,0, "cm"))
 
@@ -190,7 +190,7 @@ g6 <- ggplot() +
   scale_y_log10(limits = c(min(df[df$gt != 0, 'gt']), 0.01),
                 breaks = trans_breaks("log10", function(x) 10^x),
                 labels = trans_format("log10", scales::math_format(10^.x))) +
-  labs(x = "Ground truth", y = 'Benchmark') +
+  labs(x = "Ground truth", y = 'Benchmark model') +
   theme(legend.position = 'top', legend.key.height= unit(0.3, 'cm'),
         plot.margin = margin(1,0.5,0,0, "cm"))
 
