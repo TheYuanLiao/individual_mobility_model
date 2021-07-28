@@ -115,6 +115,7 @@ if __name__ == '__main__':
                    'cebu', 'egypt', 'guadalajara', 'jakarta', 'johannesburg', 'kualalumpur',
                    'lagos', 'madrid', 'manila', 'mexicocity', 'moscow', 'nairobi',
                    'rio', 'saudiarabia', 'stpertersburg', 'surabaya']
+    # Average values of model parameters
     p, gamma, beta = 0.922061, 0.200460, 0.117135
 
     for region2compute in region_list:
@@ -132,6 +133,7 @@ if __name__ == '__main__':
         print(region2compute, "is done. Elapsed time was %g seconds" % (time.time() - start_time))
 
     # The regions with ground truth data
+    # Calibrated values of model parameters
     region_dict = {'sweden': (0.981092, 0.235857, 0.014033),
                    'netherlands': (0.797708, 0.173252, 0.174630),
                    'saopaulo': (0.987384, 0.192272, 0.162742)}

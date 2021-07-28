@@ -3,5 +3,7 @@
 dbs
 legacy
 tests
+figures/extra-plots-thesis-presentation
+src/r/extra-plots
 *.pyc
 .ipynb_checkpoints

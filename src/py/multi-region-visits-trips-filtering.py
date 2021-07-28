@@ -69,10 +69,9 @@ if __name__ == '__main__':
     region_list = ['sweden', 'netherlands', 'saopaulo', 'australia', 'austria', 'barcelona',
                    'capetown', 'cebu', 'egypt', 'guadalajara', 'jakarta',
                    'johannesburg', 'kualalumpur', 'lagos', 'madrid', 'manila', 'moscow', 'nairobi',
-                   'rio', 'saudiarabia', 'stpertersburg', 'surabaya'] #,'mexicocity',
+                   'rio', 'saudiarabia', 'stpertersburg', 'surabaya']
     runid = 7
     # parallelize the processing of geotagged tweets of multiple regions
     pool = mp.Pool(mp.cpu_count())
     pool.starmap(filtering, [(r, runid, ) for r in region_list])
     pool.close()
-    # filtering(region='nairobi', runid=runid)

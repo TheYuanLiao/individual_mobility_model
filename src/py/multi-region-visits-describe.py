@@ -19,7 +19,7 @@ ROOT_dir = get_repo_root()
 sys.path.append(ROOT_dir)
 sys.path.insert(0, ROOT_dir + '/lib')
 
-import lib.helpers as mscthesis
+import lib.helpers as helpers
 
 
 class MultiRegionVisitsDesc:
@@ -50,12 +50,9 @@ class MultiRegionVisitsDesc:
                                                 data2[:1].latitude.values.reshape(1, 1)))
         data2.loc[:, 'longitude_d'] = np.vstack((data2[1:].longitude.values.reshape(len(data2) - 1, 1),
                                                  data2[:1].longitude.values.reshape(1, 1)))
-        #data2.loc[:, 'dom_d'] = np.vstack((data2[1:].dom.values.reshape(len(data2) - 1, 1),
-        #                                   data2[:1].dom.values.reshape(1, 1)))
         data2.loc[:, 'distance'] = data2.apply(
-            lambda row: mscthesis.haversine_distance(row['latitude'], row['longitude'],
+            lambda row: helpers.haversine_distance(row['latitude'], row['longitude'],
                                                      row['latitude_d'], row['longitude_d']), axis=1)
-        #data2.loc[:, 'inland'] = data2.apply(lambda row: 1 if (row['dom'] == 1) & (row['dom_d'] == 1) else 0, axis=1)
         return pd.Series({'pkt': data2['distance'].sum(),
                           'num_trip': len(data2),
                           'pkt_inland': data2.loc[:, 'distance'].sum(), #data2['inland'] == 1
@@ -67,12 +64,9 @@ class MultiRegionVisitsDesc:
                                                 data2[:1].latitude.values.reshape(1, 1)))
         data2.loc[:, 'longitude_d'] = np.vstack((data2[1:].longitude.values.reshape(len(data2) - 1, 1),
                                                  data2[:1].longitude.values.reshape(1, 1)))
-        #data2.loc[:, 'dom_d'] = np.vstack((data2[1:].dom.values.reshape(len(data2) - 1, 1),
-        #                                   data2[:1].dom.values.reshape(1, 1)))
         data2.loc[:, 'distance'] = data2.apply(
-            lambda row: mscthesis.haversine_distance(row['latitude'], row['longitude'],
+            lambda row: helpers.haversine_distance(row['latitude'], row['longitude'],
                                                      row['latitude_d'], row['longitude_d']), axis=1)
-        #data2.loc[:, 'inland'] = data2.apply(lambda row: 1 if (row['dom'] == 1) & (row['dom_d'] == 1) else 0, axis=1)
         return data2.loc[:, ['userid', 'timeslot', 'day_n', 'distance',
                              'latitude', 'longitude', 'latitude_d', 'longitude_d']]
 
@@ -103,10 +97,9 @@ if __name__ == '__main__':
                    'rio', 'saudiarabia', 'stpertersburg', 'surabaya']
     runid = 7
     # If agg set to False, then the trips will be logged, otherwise, the aggregate statistics will be logged
-    agg = True
-    # parallelize the processing of geotagged tweets of multiple regions
-    pool = mp.Pool(mp.cpu_count())
-    pool.starmap(region_visits_proc, [(r, runid, agg, ) for r in region_list])
-    pool.close()
-    # Single region test
-    # region_visits_proc('nairobi', runid, aggregation=agg)
+    for agg in [True, False]:
+        # parallelize the processing of geotagged tweets of multiple regions
+        pool = mp.Pool(mp.cpu_count())
+        pool.starmap(region_visits_proc, [(r, runid, agg, ) for r in region_list])
+        pool.close()
+

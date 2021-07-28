@@ -26,6 +26,13 @@ with open(ROOT_dir + '/lib/regions.yaml') as f:
 
 
 def where_self(row):
+    """
+    Get the time zone from a pair of GPS coordinates.
+    :param row: contains "latitude" and "longitude"
+    :type row: a row of a dataframe
+    :return: a timezone corresponding to the input coordinates pair
+    :rtype: string
+    """
     try:
         x = tz.gettz(tzg.tzNameAt(row["latitude"], row["longitude"]))
     except:
@@ -34,6 +41,13 @@ def where_self(row):
 
 
 def where2time(row):
+    """
+    Convert UTC time to local time with known time zone.
+    :param row: contains "UTC", "time_zone", "created_at"
+    :type row: a row of a dataframe
+    :return: local time converted from UTC and time_zone
+    :rtype: object
+    """
     from_zone = tz.gettz('UTC')
     timezone = row["time_zone"]
 
@@ -45,6 +59,13 @@ def where2time(row):
 
 
 def region_converter(region=None):
+    """
+    Convert time of raw geotagged tweets and save to a new db per specified region.
+    :param region: name of the region to be processed
+    :type region: string
+    :return: none
+    :rtype: none
+    """
     if not os.path.exists(ROOT_dir + f'/dbs/{region}/{region}.sqlite3'):
         db = region_manager[region]['source_path']
         conn = sqlite3.connect(db)

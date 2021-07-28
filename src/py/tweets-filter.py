@@ -7,6 +7,7 @@ import pandas as pd
 import geopandas as gpd
 import multiprocessing as mp
 
+
 def get_repo_root():
     """Get the root directory of the repo."""
     dir_in_repo = os.path.dirname(os.path.abspath('__file__'))
@@ -19,7 +20,7 @@ ROOT_dir = get_repo_root()
 sys.path.append(ROOT_dir)
 sys.path.insert(0, ROOT_dir + '/lib')
 
-import lib.helpers as mscthesis
+import lib.helpers as helpers
 
 
 with open(ROOT_dir + '/lib/regions.yaml') as f:
@@ -27,6 +28,13 @@ with open(ROOT_dir + '/lib/regions.yaml') as f:
 
 
 def get_homelocations(ts):
+    """
+    Get the home location from a dataframe of geotagged tweets.
+    :param ts: geotagged tweets
+    :type ts: a dataframe
+    :return: home location (single-row)
+    :rtype: GeoDataFrame
+    """
     _ts = ts.query('label == "home"').groupby(['userid', 'region']).head(1)
     return gpd.GeoDataFrame(
         _ts,
@@ -37,6 +45,10 @@ def get_homelocations(ts):
 
 class TweetsFilter:
     def __init__(self, region=None):
+        """
+        :param region: region for processing its tweets
+        :type region: string
+        """
         # Define the focus region
         self.region = region
         self.boundary = None
@@ -59,7 +71,11 @@ class TweetsFilter:
         self.homelocations = None
 
     def zones_boundary_load(self):
-        # The boundary to use when removing users based on location.
+        """
+        Get the boundary to use when removing users based on location.
+        :return: self.zones, self.boundary
+        :rtype: GeoDataFrame
+        """
         zones_loader = self.region_info['zones_loader']
         metric_epsg = self.region_info['metric_epsg']
         zone_id = self.region_info['zone_id']
@@ -74,8 +90,13 @@ class TweetsFilter:
             self.boundary = self.zones.assign(a=1).dissolve(by='a').simplify(tolerance=0.2).to_crs("EPSG:4326")
 
     def tweets_filter_1(self):
+        """
+        Filter out non-precise geotagged tweets and those individuals with less than 50 geotagged tweets.
+        :return: self.geotweets
+        :rtype: DataFrame
+        """
         # Load geotweets from .sqlite
-        geotweets = mscthesis.tweets_from_sqlite(self.sqlite_geotweets)
+        geotweets = helpers.tweets_from_sqlite(self.sqlite_geotweets)
 
         # 1 Filter out geotweets without precise geolocation information or more than 50
         coord_counts = geotweets.groupby(['latitude', 'longitude']).size().sort_values(ascending=False)
@@ -100,16 +121,21 @@ class TweetsFilter:
         )
 
     def tweets_filter_2(self):
+        """
+        Keep the data of the latest living area and filter out the users who live outside the boundary.
+        :return: self.homelocations, self.geotweets
+        :rtype: DataFrame
+        """
         # 2 Remove home...
         geotweets = self.geotweets.reset_index('createdat')
         geotweets = geotweets.assign(ym=geotweets['createdat'].dt.to_period('M'))
 
         # Get home locations
-        geotweetsx = mscthesis.cluster(geotweets)
-        geotweetsx = mscthesis.label_home(geotweetsx)
+        geotweetsx = helpers.cluster(geotweets)
+        geotweetsx = helpers.label_home(geotweetsx)
 
         # Only keep the latest home location and the relevant records
-        geotweetsx = mscthesis.remove_tweets_outside_home_period(geotweetsx)
+        geotweetsx = helpers.remove_tweets_outside_home_period(geotweetsx)
         homelocations = get_homelocations(geotweetsx)
         self.homelocations = gpd.clip(homelocations, self.boundary.convex_hull)
 
@@ -118,6 +144,7 @@ class TweetsFilter:
         self.geotweets = geotweetsy
 
     def tweets_save(self):
+        """Save the processed tweets and home locations."""
         if not os.path.exists(self.csv_geotweets):
             self.geotweets.to_csv(self.csv_geotweets)
         if not os.path.exists(self.csv_homelocations):
@@ -125,6 +152,7 @@ class TweetsFilter:
 
 
 def region_proc(region=None):
+    """Process the tweets and save it from database in .csv."""
     # Loading zones
     start_time = time.time()
     tl = TweetsFilter(region=region)

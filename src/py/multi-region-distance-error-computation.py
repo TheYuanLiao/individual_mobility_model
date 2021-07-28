@@ -1,7 +1,6 @@
 import os
 import sys
 import subprocess
-import multiprocessing as mp
 import geopandas as gpd
 import time
 import yaml
@@ -160,18 +159,9 @@ def network_distance(region=None, runid=None):
 
 
 if __name__ == '__main__':
-    # Sweden and the Netherlands are excluded because they have survey data.
-    # Selective regions are analysed for the focus of urban areas.
     region_list = ['surabaya', 'stpertersburg', 'barcelona', 'capetown', 'cebu', 'guadalajara',
                    'johannesburg', 'kualalumpur', 'madrid', 'nairobi']
     runid = 7
-    # # parallelize the processing of geotagged tweets of multiple regions
-    # pool = mp.Pool(mp.cpu_count())
-    # pool.starmap(network_distance, [(r, runid) for r in region_list])
-    # pool.close()
-
-    # Single region test
-    # network_distance(region='nairobi', runid=runid)
 
     for region in tqdm(region_list, desc='Adding network distance'):
         print(region)

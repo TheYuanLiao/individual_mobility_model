@@ -6,7 +6,6 @@ import lib.models as models
 import lib.validation as validation
 import lib.helpers as helpers
 import lib.genericvalidation as genericvalidation
-import legacy.sweden_sampers.sweden as sweden
 import lib.sweden_sv as sweden_sv
 import lib.saopaulo as saopaulo
 import lib.netherlands as netherlands
@@ -23,24 +22,6 @@ def get_repo_root():
 ROOT_dir = get_repo_root()
 
 region_path = {
-    'sweden-national': {
-        'home_locations_path': ROOT_dir + "/dbs/sweden/homelocations.csv",
-        'tweets_calibration': ROOT_dir + "/dbs/sweden/geotweets_c.csv",
-        'tweets_validation': ROOT_dir + "/dbs/sweden/geotweets_v.csv",
-        'gt': sweden.GroundTruthLoader(scale='national')
-    },
-    'sweden-west': {
-        'home_locations_path': ROOT_dir + "/dbs/sweden/homelocations.csv",
-        'tweets_calibration': ROOT_dir + "/dbs/sweden/geotweets_c.csv",
-        'tweets_validation': ROOT_dir + "/dbs/sweden/geotweets_v.csv",
-        'gt': sweden.GroundTruthLoader(scale='west')
-    },
-    'sweden-east': {
-        'home_locations_path': ROOT_dir + "/dbs/sweden/homelocations.csv",
-        'tweets_calibration': ROOT_dir + "/dbs/sweden/geotweets_c.csv",
-        'tweets_validation': ROOT_dir + "/dbs/sweden/geotweets_v.csv",
-        'gt': sweden.GroundTruthLoader(scale='east')
-    },
     'sweden': {
         'home_locations_path': ROOT_dir + "/dbs/sweden/homelocations.csv",
         'tweets_calibration': ROOT_dir + "/dbs/sweden/geotweets_c.csv",
@@ -196,8 +177,8 @@ class RegionDataPrep:
 
 class VisitsGeneration:
     """
-    VisitsGeneration take region and its zones, odm, and distance groups as initiated.
-    It generate visits and compare the odm_model with the ground truth.
+    VisitsGeneration takes region and its zones, odm, and distance groups as initiated.
+    It generates visits and compare the odm_model with the ground truth.
     It returns the kl divergence measure quantifying the similarity between the above two distance distributions.
     """
 

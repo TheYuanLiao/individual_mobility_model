@@ -25,6 +25,7 @@ from bayes_opt.event import Events
 
 
 class RegionParaSearch:
+    """Prepare model data, generate visits according to the specified parameters, and return KL divergence."""
     def __init__(self, res=None, region=None, rg=None, visits=None):
         self.res = res
         self.region = region
@@ -63,7 +64,7 @@ class RegionParaSearch:
 
 if __name__ == '__main__':
     for region2search in ['netherlands', 'sweden', 'saopaulo']:
-        # prepare region data by initiating the class
+        # Prepare region data by initiating the class
         gs = RegionParaSearch(region=region2search)
         gs.region_data_load()
 

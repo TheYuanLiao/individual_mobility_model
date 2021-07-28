@@ -76,12 +76,11 @@ if __name__ == '__main__':
             line = json.loads(jsonObj)
             list_lines.append(line)
     df = pd.DataFrame(list_lines)
-    # ['sweden-west', 'sweden-east', 'netherlands', 'saopaulo', 'sweden-national']
     for region2compute in ['sweden', 'netherlands', 'saopaulo']:
         # Start timing the code
         start_time = time.time()
         dc = df.loc[df['region'] == region2compute, ['p', 'beta', 'gamma']].to_dict('records')[0]
-        # prepare region data by initiating the class
+        # Prepare region data by initiating the class
         gs = RegionParaGenerate(region=region2compute)
         for tp in ('calibration', 'validation'):
             gs.region_data_load(type=tp)

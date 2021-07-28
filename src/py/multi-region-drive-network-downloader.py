@@ -1,7 +1,6 @@
 import os
 import sys
 import subprocess
-import multiprocessing as mp
 import geopandas as gpd
 import time
 import yaml
@@ -63,19 +62,8 @@ def downloader(region=None):
 
 
 if __name__ == '__main__':
-    # Sweden and the Netherlands are excluded because they have survey data.
-    # 'saudiarabia', 'australia', 'lagos' are excluded due to downloading errors or too large country area.
-    region_list = ['barcelona', 'capetown', 'cebu', 'guadalajara', 'jakarta',
-                   'johannesburg', 'kualalumpur', 'lagos', 'madrid', 'manila', 'moscow', 'nairobi',
-                   'rio', 'stpertersburg', 'surabaya', 'austria', 'egypt']
-
-    # # parallelize the processing of geotagged tweets of multiple regions
-    # pool = mp.Pool(mp.cpu_count())
-    # pool.starmap(downloader, [(r, ) for r in region_list])
-    # pool.close()
-
-    # Single region test
-    # downloader(region='nairobi')
+    region_list = ['surabaya', 'stpertersburg', 'barcelona', 'capetown', 'cebu', 'guadalajara',
+                   'johannesburg', 'kualalumpur', 'madrid', 'nairobi']
 
     for region in region_list:
         print(region)
