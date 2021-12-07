@@ -9,6 +9,7 @@ library(ggpubr)
 library(scales)
 library(latex2exp)
 library(randomcoloR)
+library(ggsci)
 
 region_list <- c('netherlands', 'sweden', 'austria','australia',
                  'saudiarabia',  'egypt', 'moscow', 'stpertersburg',
@@ -56,10 +57,9 @@ rgplot <- function(region){
   return(g)
 }
 
-region_list1 <- c('sweden', 'australia',
-                 'netherlands', 'nairobi')
+region_list1 <- c('australia', 'nairobi')
 glist <- lapply(region_list1, rgplot)
-G1 <- ggarrange(plotlist = glist, nrow = 2, ncol = 2)
+G1 <- ggarrange(plotlist = glist, nrow = 1, ncol = 2)
 
 my_colors <- pal_igv('default')(22)
 
@@ -78,7 +78,7 @@ g3 <- ggplot(df) +
                   labels = trans_format("log10", scales::math_format(10^.x))) +
     annotation_logticks()
 
-G <- ggarrange(G1, g3, nrow = 2, ncol = 1, heights = c(2, 1), labels = c('(a)', '(b)'))
+G <- ggarrange(G1, g3, nrow = 2, ncol = 1, heights = c(1, 1), labels = c('(a)', '(b)'))
 
 ggsave(filename = glue("figures/trip_distance.png"), plot=G,
-     width = 6, height = 9, unit = "in", dpi = 300)
+     width = 6, height = 6, unit = "in", dpi = 300)

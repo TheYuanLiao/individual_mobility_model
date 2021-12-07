@@ -1,4 +1,4 @@
-# A Mobility Model for Synthetic Travel Demand from Sparse Individual Traces
+# A Mobility Model for Synthetic Travel Demand from Sparse Individual Trajectories
 Yuan Liao, Kristoffer Ek, Eric Wennerberg, Sonia Yeh, Jorge Gil
 
 ## 1. Model (Section 2)
@@ -9,13 +9,13 @@ There are other scripts under `lib/` defined to be called by `lib/models.py`, `l
 and the below scripts and notebooks.
 
 ## 2. Data pre-processing (Section 3.1)
-In this part, the sparse mobility traces from the geolocations of Twitter data are extracted and preprocessed.
+In this part, the sparse mobility trajectories from the geolocations of Twitter data are extracted and preprocessed.
 
 ### 1) Extract sparse data from their raw databases
 This is done in the script `src/py/sqlite3-converter.py`.
 
 ### 2) Preprocess the sparse geolocations of Twitter data
-This corresponds to Section 3.1. Sparse traces: geotagged tweets. 
+This corresponds to Section 3.1. Sparse trajectories: geotagged tweets. 
 This is done in the script `src/py/tweets-filter.py`.
 
 ## 3. Experiment: model validation (Section 3.2)
@@ -27,7 +27,8 @@ This is done in the notebook `src/py/1-split-input-for-validation.ipynb`.
 This is done in the script `src/py/parasearch-bayesian.py`.
 
 ### 3) Model output on validation and calibration datasets
-This is done in the script `src/py/parameters-validation.py`.
+This is done in the script `src/py/parameters-validation.py`. The selection of parameter ![](https://latex.codecogs.com/svg.latex?D) 
+is tested in the script `src/py/parameter-D-KL-relationship.py`.
 
 ### 4) A test of model parameter transferability (Section 4.3)
 This is done in the script `src/py/parameters-sensitivity-test.py`.
@@ -51,7 +52,8 @@ This is done in the script `src/py/multi-region-visits-trips-filtering.py`.
 
 ### 5) Characterising trip distance
 This is done in the notebook `src/py/4-characterising-trip-distance.ipynb` and the R script
-`src/r/correlation-multi-region-agg.R`.
+`src/r/correlation-multi-region-agg.R`. The 10-fold theoretical distributions fitting is done
+in the script `src/py/distance-models-sensitivity-test.py`.
 
 ## 5. Value difference between Euclidean trip distance and travel distance (Appendix B.2)
 This is to quantify to what extent we underestimate the travel distance
@@ -87,8 +89,8 @@ The below shows a summary of figures.
 | `src/r/plot-odm-r1-calibration.R`         | Comparison of trip frequency rate between the ground truth data and model output - calibration data              | `figures/od_pairs_calibration.png`          | 6                     |
 | `src/r/plot-odm-r1-validation.R`          | Comparison of trip frequency rate between the ground truth data and model output - validation data               | `figures/od_pairs_validation.png`           | B.1                   |
 | `src/r/plot-distance.R`                   | Comparison of trip distance distribution between the ground truth data and the model output                      | `figures/distance.png`                      | 7                     |
-| `src/r/plot-sensitivity.R`                | Performance gain of each region using the model parameters calibrated from the other regions                     | `figures/sensitivity.png`                   | 8                     |
+| `src/r/plot-sensitivity-r2.R`             | Relative performance of each region using the model parameters calibrated from the other regions                 | `figures/sensitivity.png`                   | 8                     |
 | `src/r/plot-multi-region-pdf.R`           | Distance distributions of model-synthesised domestic trips (PDF)                                                 | `figures/trip_distance.png`                 | 9                     |
-| `src/r/plot-empirical-M-distri.R`         | Empirical distribution of the number of visits per day derived from the Swedish National Travel Survey           | `figures/M_day_empirical.png`               | A.1                   |
+| `src/r/plot-parameters-M-D.R`             | Value settings of the model parameters ![](https://latex.codecogs.com/svg.latex?M_{day}) and ![](https://latex.codecogs.com/svg.latex?D).           | `figures/M_day_D.png`                       | A.1                   |
 | `src/r/plot-distance-error-data.R`        | Trip distance, Euclidean vs. reported travel distance (survey data)                                              | `figures/distance_error_data.png`           | B.2                   |
 | `src/r/plot-distance-error-simulation.R`  | Distance ratio of selected urban areas (simulated)                                                               | `figures/distance_error_simulation.png`     | B.3                   |
