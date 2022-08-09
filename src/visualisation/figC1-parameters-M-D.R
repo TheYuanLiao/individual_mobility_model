@@ -14,8 +14,8 @@ options(scipen=10000)
 df <- read.csv('results/parameter_D_KL_relationship.csv')
 df <- df %>%
   mutate(region=recode(region, "sweden"="Sweden",
-                       "netherlands"="the Netherlands",
-                       "saopaulo"="SÃ£o Paulo, Brazil"))
+                       "netherlands"="The Netherlands",
+                       "saopaulo"="São Paulo, Brazil"))
 names(df)[names(df) == 'region'] <- 'Region'
 
 g1 <- ggplot(df, aes(x=days, y=kl, shape=Region)) + theme_minimal() +

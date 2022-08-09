@@ -106,7 +106,7 @@ class RegionDataPrep:
             ['groundtruth']
         )
 
-    def load_geotweets(self, type='calibration', only_weekday=True):
+    def load_geotweets(self, type='calibration', only_weekday=True, N_min=20, benchmark_save=False):
         # 1. Load geotweets
         if type == 'calibration':
             geotweets_path = region_path[self.region]['tweets_calibration']
@@ -129,10 +129,8 @@ class RegionDataPrep:
             ).to_crs("EPSG:3006")
         # Remove users with less than 20 tweets
         tweetcount = geotweets.groupby('userid').size()
-        geotweets = geotweets.drop(labels=tweetcount[tweetcount < 20].index)
-        # Remove users with only one region
-        regioncount = geotweets.groupby(['userid', 'region']).size().groupby('userid').size()
-        geotweets = geotweets.drop(labels=regioncount[regioncount < 2].index)
+        geotweets = geotweets.drop(labels=tweetcount[tweetcount < N_min].index)
+
         # Ensure the tweets are sorted chronologically and the geometry is dropped
         if type == 'calibration':
             self.tweets_calibration = geotweets.sort_values(by=['userid', 'createdat']).drop(columns=['geometry'])
@@ -140,6 +138,10 @@ class RegionDataPrep:
         else:
             self.tweets_validation = geotweets.sort_values(by=['userid', 'createdat']).drop(columns=['geometry'])
             tweets = self.tweets_validation.copy()
+
+        # Remove users with only one region
+        regioncount = tweets.groupby(['userid', 'region']).size().groupby('userid').size()
+        tweets = tweets.drop(labels=regioncount[regioncount < 2].index)
 
         # 2. Create benchmark odm from geotweets directly
         tweets.loc[:, 'kind'] = 'region'
@@ -151,7 +153,7 @@ class RegionDataPrep:
             benchmark_path = ROOT_dir + '/dbs/' + self.region + '/odm_benchmark_c.csv'
         else:
             benchmark_path = ROOT_dir + '/dbs/' + self.region + '/odm_benchmark_v.csv'
-        if ~os.path.exists(benchmark_path):
+        if benchmark_save & (~os.path.exists(benchmark_path)):
             bm_odm2save = self.bm_odm.copy()
             bm_odm2save = bm_odm2save.reset_index()
             bm_odm2save.columns = ['ozone', 'dzone', 'benchmark']

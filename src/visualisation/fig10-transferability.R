@@ -1,4 +1,4 @@
-# Title     : Visualise the sensitivity of model parameters
+# Title     : Visualise the transferability of model parameters
 # Objective : The performance gain ratio when use the other two regions' parameters and the average
 # Created by: Yuan Liao
 # Created on: 2021-10-27
@@ -8,10 +8,10 @@ library(dplyr)
 library(viridis)
 library(ggpubr)
 
-df <- read.csv('results/para-search-r1/sensitivity_summary.csv')
-df$region <- factor(df$region, levels=c('sweden', 'netherlands', 'saopaulo'),
+df <- read.csv('../../results/para-search-r1/transferability_summary.csv')
+df$region <- factor(df$region, levels=c('../../dbs/sweden', 'netherlands', 'saopaulo'),
                     labels=c('SE', 'NL', 'SP'))
-df$region2cross <- factor(df$region2cross, levels=c('sweden', 'netherlands', 'saopaulo', 'average'),
+df$region2cross <- factor(df$region2cross, levels=c('../../dbs/sweden', 'netherlands', 'saopaulo', 'average'),
                           labels=c('SE', 'NL', 'SP', 'AVG'))
 
 # Plot the matrix
@@ -53,5 +53,5 @@ h <- 3
 w <- 3 * 2
 G <- ggarrange(g1, g2,
                ncol = 2, nrow = 1, labels = c('(a)', '(b)'), common.legend = T, legend="bottom")
-ggsave(filename = "figures/sensitivity.png", plot=G,
+ggsave(filename = "../../figures/sensitivity.png", plot=G,
        width = w, height = h, unit = "in", dpi = 300)

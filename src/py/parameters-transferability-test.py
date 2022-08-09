@@ -65,7 +65,7 @@ class RegionParaGenerate:
         model_odm.columns = ['ozone', 'dzone', 'model']
         print('Saving model_odm... \n', model_odm.head())
         model_odm.to_csv(ROOT_dir + '/dbs/' + self.region + '/odm_' + type + '_' + para_region + '.csv')
-        dms.to_csv(ROOT_dir + '/results/para-search-r1/sensitivity/'
+        dms.to_csv(ROOT_dir + '/results/para-search-r1/transferability/'
                    + self.region + '_' + type + '_' + para_region + '_distances.csv')
 
 

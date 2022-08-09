@@ -95,11 +95,6 @@ reg_plt <- function(region, title_region, result, rs_path, df, x_lab, y_lab) {
   return(g)
 }
 
-# region <- 'sweden-west'
-# g1 <- reg_plt(region, title_region, result, rs_path, df)
-# region <- 'sweden-east'
-# g2 <- reg_plt(region, title_region, result, rs_path, df)
-
 region <- 'sweden'
 g_se <- reg_plt(region, title_region, result, rs_path, df, '', 'Cumulative share of trips')
 

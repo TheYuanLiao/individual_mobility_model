@@ -4,6 +4,8 @@ dbs
 legacy
 tests
 figures/extra-plots-thesis-presentation
-src/r/extra-plots
+figures/legacy
+src/visualisation/extra-plots
+results/multi-region-results
 *.pyc
 .ipynb_checkpoints

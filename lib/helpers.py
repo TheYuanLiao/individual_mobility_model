@@ -258,3 +258,9 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     a = math.sin(dlat / 2) ** 2 + math.cos(_lat1) * math.cos(_lat2) * math.sin(dlon / 2) ** 2
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     return R * c
+
+def ssi_dataframe(df, var1, var2):
+    df_c = df.loc[(df[var1] != 0) & (df[var2] != 0), :]
+    x_min = df_c.apply(lambda row: min(row[var1], row[var2]), axis=1)
+    SSI = 2 * x_min.sum() / (df_c.loc[:, var1].sum() + df_c.loc[:, var2].sum())
+    return SSI
