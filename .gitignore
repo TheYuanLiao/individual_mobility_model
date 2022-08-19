@@ -9,3 +9,4 @@ src/visualisation/extra-plots
 results/multi-region-results
 *.pyc
 .ipynb_checkpoints
+.Rhistory
