@@ -30,13 +30,13 @@ g1 <- ggplot(df.n, aes(x=nmax, y=kl, shape=Region)) + theme_minimal() +
   geom_line(color='gray65', size = 0.3) +
   geom_point(color='gray45', size = 1.5) +
   theme(legend.position = c(0.7, 0.7)) +
-  labs(y = 'KL divergence', x="Maximum no. of traces per individual")
+  labs(y = 'KL divergence', x="Maximum no. of geolocations per individual")
 
 g2 <- ggplot(df.nind, aes(x=n_total/1000, y=kl, shape=Region)) + theme_minimal() +
   geom_line(color='gray65', size = 0.3) +
   geom_point(color='gray45', size = 1.5) +
   theme(legend.position = c(0.7, 0.7)) +
-  labs(y = 'KL divergence', x=TeX("No. of traces ($10^3$)"))
+  labs(y = 'KL divergence', x=TeX("No. of geolocations ($10^3$)"))
 
 G <- ggarrange(g2, g1, ncol = 2, nrow = 1, labels = c('(a)', '(b)'), widths = c(1, 1), common.legend = T, legend = 'bottom')
 ggsave(filename = "figures/data_length_impact.png", plot=G,
